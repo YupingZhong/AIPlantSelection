@@ -22,49 +22,17 @@ library(vegan)
 
 ##-----------(1) hypothesis 1 : 10 plant not enough for large networks------------
 
+data_count_scaled<-readRDS("data/processed/data_count_scaled_published_0526.rds")
+data_interact<-readRDS("data/processed/data_interact_published_0526.rds")
+data_merge<-readRDS("data/processed/data_merge.rds")
+percent_10<-readRDS("data/processed/percent_10.rds")
 
-data_count_scaled<-readRDS("data_count_scaled_published_0526.rds")
-data_interact<-readRDS("data_interact_published_0526.rds")
-
-data_interact<-data_interact%>%
-  mutate(
-    Plant_accepted_name = str_replace_all(Plant_accepted_name, "×", "") %>%  # 去掉 ×
-      str_squish()  # 去掉多余空格
-  )
-
-data_count_scaled_species <- data_count_scaled %>%
-  filter(!is.na(Plant_species)) %>%       # 排除 NA
-  filter(str_detect(Plant_species, " "))  # 保留含空格的名字（双名）
-
-data_merge<- merge(data_interact, data_count_scaled[,c("Flower_data_merger","Flower_count_scaled","Plant_species","Study_Network_id")], 
-                   by = "Flower_data_merger",all = TRUE)%>%
-  filter(!is.na(Flower_data_merger))%>%
-  mutate(
-    Study_Network_id = coalesce(Study_Network_id.x, Study_Network_id.y)
-  ) %>%
-  dplyr::select(-Study_Network_id.x, -Study_Network_id.y)%>%
-  mutate(Interaction_addup = ifelse(is.na(Interaction_addup), 0, Interaction_addup))%>% # 替换 `Interaction_addup` 为 NA 的值为 0
-  mutate(
-    Plant_accepted_name = str_squish(str_replace_all(replace_na(Plant_accepted_name, ""), "×", ""))
-  ) 
-
-
-unique(data_interact$Study_Network_id)
-unique(data_count_scaled_species$Study_Network_id)
-unique(data_merge$Study_Network_id)
-
-percent_10<-readRDS("percent_10.rds")
-
-#Top 10 common
-data_count_scaled_species %>%
-  filter(is.na(Flower_count_scaled!=0))
-
-top_10_species <- data_count_scaled_species %>%
+top_10_species <- data_count_scaled %>%
   filter(Flower_count_scaled!=0)%>%
   distinct(Study_Network_id, Plant_species,Flower_count_scaled, .keep_all = TRUE)%>%
   group_by(Study_Network_id) %>%
   arrange(Study_Network_id, desc(Flower_count_scaled)) %>%
-  top_n(10, wt = Flower_count_scaled)
+  slice_max(Flower_count_scaled, n=10)
 
 n_top10<-top_10_species%>%
   group_by(Study_Network_id)%>%
@@ -81,17 +49,16 @@ plant_percent<-merge(n_top10, n_all_plant,by.x = "Study_Network_id", by.y = "Stu
   mutate(plant_percent=n_top10/n_all_plant)
 #merge
 plotplotplot <- merge(percent_10,plant_percent,by.x = "Study_Network_id", by.y = "Study_Network_id", 
-                      all = TRUE)
-plotplotplot_clean <- plotplotplot %>% drop_na()
+                      all = TRUE) %>% drop_na()
 
 
 # check number of sites
-num_points_before <- nrow(plotplotplot_clean)
+num_points_before <- nrow(plotplotplot)
 print(paste("Number of points before jitter:", num_points_before))#389 networks
 
 # regression
-model1<- lm(Abundant_Top10 ~ plant_percent, data = plotplotplot_clean)
-model2 <- lm(Abundant_Top10 ~ n_all_plant, data = plotplotplot_clean)
+model1<- lm(Abundant_Top10 ~ plant_percent, data = plotplotplot)
+model2 <- lm(Abundant_Top10 ~ n_all_plant, data = plotplotplot)
 summary(model1)
 summary(model2)
 
@@ -120,7 +87,7 @@ summary(model2)
 #summary(model4)
 #############################3
 # 添加分组标签，并确保列名一致
-# df1 <- plotplotplot_clean %>%
+# df1 <- plotplotplot %>%
 #   mutate(
 #     percent = Abundant_Top10,
 #     Group = "Pollinator Richness"
@@ -166,7 +133,7 @@ summary(model2)
 # print(combined_plot)#500*500
 #####################################
 # 数据准备
-df1 <- plotplotplot_clean %>%
+df1 <- plotplotplot %>%
   mutate(
     percent = Abundant_Top10,
     Group = "Pollinator Richness"
@@ -366,7 +333,6 @@ result_all<-read.csv("result_all_published.csv",header=TRUE)%>%
          Random_3_Rich = pollinator_count.y.y.y.y,
          Total_Rich = total_pollinator_count.x)
 
-colnames(result_all)
 # # -------------------- plotting --------------------
 # plot_richness_relation <- function(metric_df, metric_name, metric_label, save_path_prefix) {
 #   
@@ -453,8 +419,7 @@ colnames(result_all)
 # )
 # 
 
-plot_rich_site<-result_all[,c("Study_Network_id","Total_Rich")]
-head(plot_rich_site)
+#plot_rich_site<-result_all[,c("Study_Network_id","Total_Rich")]
 
 # plot_totalrich <- plot_richness_relation(
 #   metric_df = plot_rich_site,   # 这里是你包含 Total_Rich 的表
@@ -503,7 +468,7 @@ head(plot_rich_site)
 ###########################
 
 ##-------------Show solely Abundant-top10-----------
-
+plot_rich_site<-result_all[,c("Study_Network_id","Total_Rich")]
 ##########################################
 
   
@@ -1659,7 +1624,7 @@ shapiro.test(attract_percent_10$Abundant_Top10[attract_percent_10$present_group=
 shapiro.test(attract_percent_10$Abundant_Top10[attract_percent_10$present_group=="Absent"])
 
 wilcox.test(Abundant_Top10 ~ present_group, data = attract_percent_10)
-unique(attract_percent_10$present_group)
+
 
 library(ggplot2)
 library(dplyr)
@@ -2694,8 +2659,8 @@ shape_richness <- meta2 %>%
 df <- left_join(shape_var, shape_richness,
                 by=c("shape"="flw_shape_revised"))
 
-# saveRDS(df, "mean_dis_plot.rds")
-df<-readRDS("mean_dis_plot.rds")
+# saveRDS(df, "data/processed/mean_dis_plot.rds")
+df<-readRDS("data/processed/mean_dis_plot.rds")
 
 library(ggrepel)  # 更好地处理标签位置
 
