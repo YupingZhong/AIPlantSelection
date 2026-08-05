@@ -1121,7 +1121,7 @@ library(dplyr)
 library(broom)
 library(purrr)
 
-traits<-read.csv("test.merge.trait.csv", header = TRUE, fileEncoding = "UTF-8")
+traits<-read.csv("data/processed/merge.trait.csv", header = TRUE, fileEncoding = "UTF-8")
 colnames(data_count_scaled)
 
 top_10_species <- data_count_scaled %>%

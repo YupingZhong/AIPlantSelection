@@ -24,17 +24,19 @@ library(vegan)
 setwd("D:/Chap1_TargetPlant_to_monitor")
 
 ##################plant and pollinator species distribution
-data_count_scaled<-readRDS("data_count_scaled_published_0526.rds")
-data_interact<-readRDS("data_interact_published_0526.rds")
+data_count_scaled<-readRDS("data/processed/data_count_scaled_published_0526.rds")
+data_interact<-readRDS("data/processed/data_interact_published_0526.rds")
 unique(data_count_scaled$Study_Network_id)
 colnames(data_count_scaled)
-#data_interact<-data_interact%>%filter(Pollinator_order == "Thysanoptera")
+
 unique(data_interact$Pollinator_rank)
 # [1] "Hymenoptera"  "Diptera"      "Coleoptera"(26site)   "Lepidoptera"  
 # less than 10 networks: 
 # "Hemiptera"   "Thysanoptera"
 # less than 6 networks:
 # [6] "Neuroptera"   "Orthoptera"   "Mecoptera"    "Odonata"   "Dermaptera"   "Blattodea" 
+
+#data_interact<-data_interact%>%filter(Pollinator_order == "Thysanoptera")
 
 data_interact %>%
   group_by(Pollinator_order) %>%
@@ -48,16 +50,9 @@ data_interact %>%
 length(unique(data_interact$Study_Network_id) )
 length(unique(data_count_scaled$Study_Network_id) )
 
-traits<-read.csv("test.merge.trait.csv", header = TRUE, fileEncoding = "UTF-8")
+traits<-read.csv("data/processed/merge.trait.csv", header = TRUE, fileEncoding = "UTF-8")
 
-# Plant name unify
-data_interact<-data_interact%>%
-  mutate(
-    Plant_accepted_name = str_replace_all(Plant_accepted_name, "×", "") %>%  # 去掉 ×
-      str_squish()  # 去掉多余空格
-  )
 
-data_interact%>%filter(Interaction_addup == 0) # no 0 record
 
 # include plant with 0 visit into analysis
 data_merge<- merge(data_interact, data_count_scaled[,c("Flower_data_merger","Flower_count_scaled","Plant_species","Study_Network_id")], 
@@ -76,7 +71,6 @@ data_merge<- merge(data_interact, data_count_scaled[,c("Flower_data_merger","Flo
 nrow(data_count_scaled)
 nrow(data_interact)
 nrow(data_merge)
-
 
 data_count_scaled%>%filter(Flower_count_scaled == 0 )
 unique(na.omit(data_merge$flw_shape_revised))
@@ -104,12 +98,6 @@ shape_count %>%
     prop_ge3 = mean(n_shape >= 3)
   )
 
-# match check
-no_match <- data_merge_trait %>%
-  filter(is.na(	
-    flw_shape_revised
-  ))  
-unique(no_match$Plant_accepted_name)
 
 ##====================================================
 
@@ -120,7 +108,7 @@ library(dplyr)
 library(stringr)
 
 ### Plant identified to only genus level were excluded before we select the most abundant plant species.
-### 在筛选前十时，必须先摆脱genus,但这一步在筛选的时候已经做了，将plant data都只保留属（interaction的没动）
+### 在筛选前十时，必须先摆脱genus, 这一步在筛选的时候已经做了，将plant data都只保留属（interaction的没动）
 
 # ----2.1 Option 1--------------------------------------
 #Sort species within each site in descending order of abundance and select the top 10/5/3 species
@@ -307,7 +295,7 @@ cov_3  <- unic_inter(result3, data_interact)
 # or alternatively, use slice_head(n = 3) after arranging by abundance to strictly limit the output to the top 3.
 
 library(dplyr)
-traits<-read.csv("test.merge.trait.csv", header = TRUE, fileEncoding = "UTF-8")
+traits<-read.csv("data/processed/merge.trait.csv", header = TRUE, fileEncoding = "UTF-8")
 data_merge_trait <- left_join(data_merge, traits, by = "Plant_accepted_name")
 
 data_count_scaled_trait<-data_count_scaled%>%
@@ -317,7 +305,7 @@ colnames(data_count_scaled)
 nrow(data_count_scaled_trait)
 nrow(data_count_scaled)
 
-##overvew of the flowershap
+## overview of the flower shape
 
 flw.no<-data_count_scaled%>%
   group_by(Study_Network_id) %>%
