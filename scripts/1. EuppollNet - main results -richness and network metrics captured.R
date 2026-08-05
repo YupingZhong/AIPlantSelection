@@ -3197,8 +3197,8 @@ ggsave("./result_260526/network.matrix.png", combined_plot, width = 15,
 
 ########################################################################################
  
-saveRDS(result10,"result10.rds")  
-saveRDS(data_merge,"data_merge.rds") 
+saveRDS(result10,"data/processd/result10.rds")  
+saveRDS(data_merge,"data/processd/data_merge.rds") 
 ##########################################################################
 
 
