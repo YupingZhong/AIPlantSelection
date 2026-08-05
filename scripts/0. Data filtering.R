@@ -11,12 +11,12 @@ library(lubridate)
 library(stringr)
 library(ggplot2)
 #read data
-metadata<-readRDS("Interaction_data_published.rds")%>%
+metadata<-readRDS("data/raw/Interaction_data_published.rds")%>%
   mutate(Study_Network_id = paste(Study_id, Network_id, sep = "_")) #The EuPPollNet interaction data
 
 length(unique(metadata$Study_Network_id))  # 1630
 
-meta_count<-readRDS("Flower_counts_published.rds")#The EuPPollNet flower data
+meta_count<-readRDS("data/raw/Flower_counts_published.rds")#The EuPPollNet flower data
 colnames(metadata)
 
 test<-meta_count%>%filter(Study_id == "20_Hoiss")

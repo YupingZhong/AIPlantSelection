@@ -12,14 +12,10 @@ library(viridis)
 library(stringr)
 
 ##################plant and pollinator species distribution
-data_count_scaled<-readRDS("data_count_scaled_published_0526.rds")#全部互作数据
-data_interact<-readRDS("data_interact_published_0526.rds")
+# read data
+data_count_scaled<-readRDS("data/processed/data_count_scaled_published_0526.rds")#全部互作数据
+data_interact<-readRDS("data/processed/data_interact_published_0526.rds")
 
-data_interact<-data_interact%>%
-  mutate(
-    Plant_accepted_name = str_replace_all(Plant_accepted_name, "×", "") %>%  # 去掉 ×
-      str_squish()  # 去掉多余空格
-  )
 n_distinct(data_interact$Study_id)
 
 #0visit的,只出现在植物调查之中的植物也应该参与此分析
@@ -35,32 +31,6 @@ data_merge<- merge(data_interact, data_count_scaled[,c("Flower_data_merger","Flo
     Plant_accepted_name = str_squish(str_replace_all(replace_na(Plant_accepted_name, ""), "×", ""))
   ) 
 
-
-setequal(
-  unique(data_interact$Study_Network_id),
-  unique(data_count_scaled$Study_Network_id)
-)
-
-
-head(data_count_scaled)
-
-colnames(data_count_scaled)
-a<-data_count_scaled %>%
-  group_by(Study_Network_id) %>%
-  summarize(
-    plant_sp_number = n_distinct(Plant_species, na.rm = TRUE)
-  )
-# 
-# #查看每个网络的植物调查得到的植物物种总数
-
-# # 找出没有匹配到的行
-# no_match <- data_merge_trait %>%
-#   filter(is.na(	
-#     flw_shape_revised
-#   ))  # 无，说明全部匹配
-# unique(no_match$Plant_accepted_name)
-# 
-# data_merge_trait
 
 data<-data_interact%>% 
   mutate(Network_id = paste0(Study_id, Network_id))  
@@ -422,24 +392,6 @@ acc_curve <- plant_rank_filt %>%
   })
 
 unique(acc_curve$Study_Network_id)
-
-# unique(acc_curve$Study_Network_id)
-# 
-# ggplot(
-#   acc_curve,
-#   aes(
-#     x = n_plants,
-#     y = pollinator_richness,
-#     group = Study_Network_id
-#   )
-# ) +
-#   geom_line(alpha = 0.2) +
-#   labs(
-#     x = "Number of most abundant plants included",
-#     y = "Proportion of pollinator species captured"
-#   ) +
-#   stat_summary(fun = mean, geom = "line", linewidth = 1.2)+
-#   theme_minimal()
 library(dplyr)
 
 Poll_mean<-ggplot(summary_curve, aes(x = n_plants)) +
