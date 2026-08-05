@@ -421,7 +421,7 @@ colnames(cov_floral_3)[colnames(cov_floral_3) == "prop_interactions"] <- "FlwSha
 
 
 
-############################################################################3
+############################################################################
 
 #----2.3 Phylo distance-----------------------
 
@@ -978,7 +978,7 @@ result_all <- reduce(datasets, full_join, by = "Study_Network_id") %>%
 head(result_all)
 n_distinct(result_all$Study_Network_id)
 
-write.csv(result_all,"result_all_published_PD.csv", row.names = TRUE)   
+write.csv(result_all,"data/processed/result_all_published_PD.csv", row.names = TRUE)   
 
 
 ############ unique coverage result merge

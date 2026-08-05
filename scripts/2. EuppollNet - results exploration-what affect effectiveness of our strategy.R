@@ -47,177 +47,21 @@ n_all_plant<-data_count_scaled %>%
 
 plant_percent<-merge(n_top10, n_all_plant,by.x = "Study_Network_id", by.y = "Study_Network_id", all = TRUE)%>%
   mutate(plant_percent=n_top10/n_all_plant)
+
 #merge
 plotplotplot <- merge(percent_10,plant_percent,by.x = "Study_Network_id", by.y = "Study_Network_id", 
                       all = TRUE) %>% drop_na()
 
-
-# check number of sites
-num_points_before <- nrow(plotplotplot)
-print(paste("Number of points before jitter:", num_points_before))#389 networks
+nrow(plotplotplot)
 
 # regression
-model1<- lm(Abundant_Top10 ~ plant_percent, data = plotplotplot)
-model2 <- lm(Abundant_Top10 ~ n_all_plant, data = plotplotplot)
-summary(model1)
+model2 <- lm(percentage_Abun10 ~ n_all_plant, data = plotplotplot)
 summary(model2)
 
-###########
-#传粉者交互多度
-# Interaction_abun <- result10 %>%
-#   filter(!is.na(Interaction_addup)) %>%  # 删除 Interaction_addup 是 NA 的行
-#   group_by(Study_Network_id) %>%
-#   summarise(Interaction_addup = sum(Interaction_addup), .groups = "drop")
-# 
-# total_Interaction<-data_interact %>%
-#   group_by(Study_Network_id) %>%
-#   summarise(Interaction_total = sum(Interaction_addup), .groups = "drop")
-
-# Interaction_captured<-total_Interaction%>%
-#   left_join(Interaction_abun, by = "Study_Network_id") %>%
-#   mutate(percent = (Interaction_addup/Interaction_total) * 100 )
-# 
-# Interaction_captured<-merge(Interaction_captured, plant_percent,by.x = "Study_Network_id", by.y = "Study_Network_id", all = TRUE)%>% drop_na()
-# 
-# # regression
-# model3 <- lm(percent ~ plant_percent, data = Interaction_captured)
-#model4 <- lm(percent ~ n_all_plant, data = Interaction_captured)
-# 
-# summary(model3)
-#summary(model4)
-#############################3
-# 添加分组标签，并确保列名一致
-# df1 <- plotplotplot %>%
-#   mutate(
-#     percent = Abundant_Top10,
-#     Group = "Pollinator Richness"
-#   ) %>%
-#   select(plant_percent, percent, Group)
-
-# df2 <- Interaction_captured %>%
-#   mutate(Group = "Pollinator Interactions") %>%
-#   select(plant_percent, percent, Group)
-# 
-# # 合并两个数据框
-# combined_df <- bind_rows(df1, df2)
-# 
-# # 自定义颜色
-# my_colors <- c(
-#   "Pollinator Richness" = "darkred",     # 红色
-#   "Pollinator Interactions" = "#9E9AC8"     # 蓝色
-# )
-
-# 绘图
-# combined_plot <- ggplot(combined_df, aes(x = plant_percent, y = percent, color = Group)) +
-#   geom_point(shape = 1, size = 2.5, position = position_jitter(width = 0.03, height = 0.5)) +
-#   geom_smooth(method = "lm", se = FALSE, size = 0.8) +
-#   scale_color_manual(values = my_colors) +
-#   labs(
-#     x = "Plant Species Coverage by Top 10 Abundant Plants",
-#     y = "% Captured",
-#     color = NULL
-#   ) +
-#   theme_bw(base_size = 12) +
-#   theme(
-#     panel.background = element_blank(),
-#     panel.grid = element_blank(),
-#     panel.border = element_rect(color = "grey80", fill = NA, linewidth = 0.5),
-#     plot.margin = margin(10, 10, 10, 10),
-#     strip.background = element_rect(fill = "white", color = NA),
-#     strip.text = element_text(size = 12, face = "bold"),
-#     legend.position = "top",
-#     legend.text = element_text(size = 11),
-#     legend.title = element_blank()
-#   )
-# 
-# print(combined_plot)#500*500
-#####################################
-# 数据准备
-df1 <- plotplotplot %>%
-  mutate(
-    percent = Abundant_Top10,
-    Group = "Pollinator Richness"
-  ) %>%
-  dplyr::select(n_all_plant, percent, Group)
-
-# df2 <- Interaction_captured %>%
-#   mutate(Group = "Pollinator Interactions") %>%
-#   select(n_all_plant, percent, Group)
-# 
-# combined_df <- bind_rows(df1, df2)
-# 
-# my_colors <- c(
-#   "Pollinator Richness" = "darkred",
-#   "Pollinator Interactions" = "#9E9AC8"
-# )
-
-
-# combined_plot <- ggplot(combined_df, aes(x = n_all_plant, y = percent, color = Group)) +
-#   geom_point(shape = 1, size = 2.5, position = position_jitter(width = 0.03, height = 0.5)) +
-#   geom_smooth(method = "lm", se = FALSE, size = 0.8, fullrange = FALSE) + # 拟合线只在数据范围内
-#   scale_color_manual(values = my_colors) +
-#   labs(
-#     x = "Number of Plant Species in the Network",
-#     y = "Percent of Pollinator Richness Captured by Subsampling",
-#     color = NULL
-#   ) +
-#   coord_cartesian(ylim = c(0, 100)) +   # 固定 y 轴范围在 0-100
-#   theme_bw(base_size = 12) +
-#   theme(
-#     panel.background = element_blank(),
-#     panel.grid = element_blank(),
-#     panel.border = element_rect(color = "grey80", fill = NA, linewidth = 0.5),
-#     plot.margin = margin(10, 10, 10, 10),
-#     strip.background = element_rect(fill = "white", color = NA),
-#     strip.text = element_text(size = 12, face = "bold"),
-#     legend.position = "top",
-#     legend.text = element_text(size = 11),
-#     legend.title = element_blank()
-#   )
-
-# library(ggpubr)
-# set.seed(2025)
-# df1_plot <- ggplot(df1, aes(x = n_all_plant, y = percent)) +
-#   geom_point(shape = 1, size = 2.5, color = "#9E9AC8", 
-#              position = position_jitter(width = 0.03, height = 0.5)) +
-#   geom_smooth(method = "lm", se = FALSE, size = 0.8, color = "#9E9AC8") +
-#   stat_cor(
-#     method = "pearson",
-#     label.x.npc = 0.05,
-#     label.y.npc = 0.05,
-#     aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
-#     r.accuracy = 0.01,
-#     p.accuracy = 0.001,
-#     size = 5
-#   ) +
-#   labs(
-#     x = "Number of Plant Species in the Network",
-#     y = "Percent of Pollinator Richness\nCaptured by Subsampling"
-#   ) +
-#   scale_x_continuous(breaks = seq(floor(min(df1$n_all_plant)),
-#                                   ceiling(max(df1$n_all_plant)),
-#                                   by = 10))+
-#   #coord_cartesian(ylim = c(0, 100)) +
-#   theme_classic(base_size = 12) +
-#   theme(
-#     plot.title = element_text(hjust = 0.5, face = "bold", size = 15),
-#     axis.title = element_text(face = "bold", size = 15),
-#     axis.text = element_text(color = "black", size = 12),
-#     legend.position = "none",
-#     plot.margin = margin(5, 15, 5, 5)
-#   )
-# 
-# print(df1_plot)#500*500
-# ggsave("./result_260526/n_plant_inter_rich_remove_grass.png", 
-#        df1_plot, width = 5, height = 4.5, units = "in", dpi = 300)
-# 
-# summary(model2)
-# 
-
 
 #####################################
 
-##-----------(2) hypothesis 2 : total plant richness total pollinator richness , pollinator evenness, NODF affect the effectiveness of our strategies------------
+##-----------(2) hypothesis 2 : total plant richness, total pollinator richness , nestedness (NODF) affect the effectiveness of our strategies------------
 # 
 # ################################
 
@@ -230,7 +74,7 @@ library(cowplot)
 library(vegan)
 library(bipartite)
 
-# 
+
 # # -------------------- function  --------------------
 # make_long <- function(df, cols, labels, xvar) {
 #   df %>%
@@ -290,21 +134,21 @@ library(bipartite)
 #         panel.background = element_blank(),
 #         panel.grid = element_blank())
 # 
-# -------------------- Evenness calculation--------------------
-evenness_df <- data_interact %>%
-  filter(!is.na(Interaction_addup)) %>%
-  group_by(Study_Network_id, Pollinator_accepted_name) %>%
-  summarise(Total_interaction = sum(as.numeric(Interaction_addup)), .groups = "drop") %>%
-  pivot_wider(names_from = Pollinator_accepted_name,
-              values_from = Total_interaction,
-              values_fill = 0) %>%
-  rowwise() %>%
-  mutate(
-    H = diversity(c_across(-Study_Network_id), index = "shannon"),
-    S = specnumber(c_across(-Study_Network_id)),
-    Evenness = H / log(S)
-  ) %>%
-  dplyr::select(Study_Network_id, Evenness)
+# # -------------------- Evenness calculation--------------------
+# evenness_df <- data_interact %>%
+#   filter(!is.na(Interaction_addup)) %>%
+#   group_by(Study_Network_id, Pollinator_accepted_name) %>%
+#   summarise(Total_interaction = sum(as.numeric(Interaction_addup)), .groups = "drop") %>%
+#   pivot_wider(names_from = Pollinator_accepted_name,
+#               values_from = Total_interaction,
+#               values_fill = 0) %>%
+#   rowwise() %>%
+#   mutate(
+#     H = diversity(c_across(-Study_Network_id), index = "shannon"),
+#     S = specnumber(c_across(-Study_Network_id)),
+#     Evenness = H / log(S)
+#   ) %>%
+#   dplyr::select(Study_Network_id, Evenness)
 
 # --------------------  Nestedness calculation--------------------
 library(bipartite)
@@ -322,26 +166,18 @@ nestedness_df <- data_interact %>%
   )
 
 
-result_all<-read.csv("result_all_published.csv",header=TRUE)%>%
-  rename(Abun_Top5_Rich = pollinator_count.x,
-         Abun_Top3_Rich = pollinator_count.y,
-         Abun_Top10_Rich = pollinator_count.x.x,
-         FlwShape_Top5_Rich = pollinator_count.y.y,
-         FlwShape_Top3_Rich = pollinator_count.x.x.x,
-         Random_10_Rich = pollinator_count.y.y.y,
-         Random_5_Rich = pollinator_count.x.x.x.x,
-         Random_3_Rich = pollinator_count.y.y.y.y,
-         Total_Rich = total_pollinator_count.x)
+result_all<-read.csv("data/processed/result_all_published_PD.csv")
 
-# # -------------------- plotting --------------------
+
+# # -------------------- plotting (figures for all strategies, all sampling effort) --------------------
 # plot_richness_relation <- function(metric_df, metric_name, metric_label, save_path_prefix) {
 #   
 #   # abundance-based
-#   plot_abun <- result_all[, c("Study_Network_id","Abundant_Top10","Abundant_Top5","Abundant_Top3")] %>%
+#   plot_abun <- result_all[, c("Study_Network_id","percentage_Abun10","percentage_Abun5","percentage_Abun3")] %>%
 #     left_join(metric_df, by = "Study_Network_id")
 #   
 #   abun_long <- make_long(plot_abun,
-#                          cols = c("Abundant_Top10","Abundant_Top5","Abundant_Top3"),
+#                          cols = c("percentage_Abun10","percentage_Abun5","percentage_Abun3"),
 #                          labels = c("Top 10","Top 5","Top 3"),
 #                          xvar = metric_name)
 #   
@@ -419,11 +255,11 @@ result_all<-read.csv("result_all_published.csv",header=TRUE)%>%
 # )
 # 
 
-#plot_rich_site<-result_all[,c("Study_Network_id","Total_Rich")]
+#plot_rich_site<-result_all[,c("Study_Network_id","total_pollinator_count_Abun10")]
 
 # plot_totalrich <- plot_richness_relation(
 #   metric_df = plot_rich_site,   # 这里是你包含 Total_Rich 的表
-#   metric_name = "Total_Rich",       # 横轴变量
+#   metric_name = "total_pollinator_count_Abun10",       # 横轴变量
 #   metric_label = "Total Pollinator Richness",
 #   save_path_prefix = "result251105_published/totalrich_topN"
 # )
@@ -467,8 +303,9 @@ result_all<-read.csv("result_all_published.csv",header=TRUE)%>%
 
 ###########################
 
-##-------------Show solely Abundant-top10-----------
-plot_rich_site<-result_all[,c("Study_Network_id","Total_Rich")]
+##-------------Figure Shows solely Abundant-top10-----------
+
+plot_rich_site<-result_all[,c("Study_Network_id","total_pollinator_count_Abun10")]
 ##########################################
 
   
@@ -498,16 +335,16 @@ get_lm_info <- function(df, x, y) {
 #-------------------------------
 plot_top10_relation <- function(metric_df, metric_name, metric_label) {
   
-  df <- result_all[, c("Study_Network_id", "Abundant_Top10")] %>%
+  df <- result_all[, c("Study_Network_id", "percentage_Abun10")] %>%
     left_join(metric_df, by = "Study_Network_id") %>%
-    filter(!is.na(Abundant_Top10), !is.na(.data[[metric_name]])) %>%
+    filter(!is.na(percentage_Abun10), !is.na(.data[[metric_name]])) %>%
     mutate(
       Predictor = metric_label
     )
   
   # ---------- Pearson  ----------
-  cor_info <- get_cor_info(df, metric_name, "Abundant_Top10")
-  lm_info <- get_lm_info(df, metric_name, "Abundant_Top10")
+  cor_info <- get_cor_info(df, metric_name, "percentage_Abun10")
+  lm_info <- get_lm_info(df, metric_name, "percentage_Abun10")
   
   
   label = paste0(
@@ -520,7 +357,7 @@ plot_top10_relation <- function(metric_df, metric_name, metric_label) {
     df,
     aes_string(
       x = metric_name,
-      y = "Abundant_Top10",
+      y = "percentage_Abun10",
       color = "Predictor",
       shape = "Predictor"
     )
@@ -580,31 +417,7 @@ plot_top10_relation <- function(metric_df, metric_name, metric_label) {
   )
 }
 
-# -------------plant data
-n_all_plant <- data_count_scaled %>%
-  filter(Flower_count_scaled != 0) %>%
-  group_by(Study_Network_id) %>%
-  summarise(
-    Plant_Richness = n_distinct(Plant_species, na.rm = TRUE)
-  )
 
-
-## covariance test
-
-network_size <- data_interact %>%
-  group_by(Study_Network_id) %>%
-  summarise(
-    Plant_interaction_Richness = n_distinct(Plant_accepted_name),
-    Pollinator_Richness = n_distinct(Pollinator_accepted_name),
-    Network_size = Plant_interaction_Richness + Pollinator_Richness
-  )
-
-# ==============================================================================
-# 一键生成论文级报告：Abundant_Top10 回归分析
-# 作者：你的名字
-# 日期：2025年4月5日
-# 功能：自动完成数据合并、建模、诊断、绘图、表格输出
-# ==============================================================================
 
 # 1. 加载必要包
 library(dplyr)
@@ -616,109 +429,22 @@ library(lmtest)
 library(MASS)
 library(broom)
 
-# 2. 读取数据并合并
-test <- n_all_plant %>%
-  left_join(plot_rich_site, by = "Study_Network_id") %>%
-  rename(Pollinator_Richness = Total_Rich) %>%
-  left_join(evenness_df, by = "Study_Network_id") %>%
-  left_join(nestedness_df, by = "Study_Network_id") %>%
-  left_join(result_all[, c("Study_Network_id", "Abundant_Top10")], by = "Study_Network_id")%>%
-  left_join(network_size[, c("Study_Network_id", "Network_size")],by = "Study_Network_id" )
-
-# 3. 检查缺失值
-sum(is.na(test$Abundant_Top10))  # 确保无缺失
-
-m1 <- lm(
-  Abundant_Top10 ~ Plant_Richness + Pollinator_Richness,
-  data=test
-)
-
-# 4. 普通线性回归
-m2 <- lm(Abundant_Top10 ~ Plant_Richness + Pollinator_Richness + Nestedness, data = test)
+# -------------plant data
+n_all_plant <- data_count_scaled %>%
+  filter(Flower_count_scaled != 0) %>%
+  group_by(Study_Network_id) %>%
+  summarise(
+    Plant_Richness = n_distinct(Plant_species, na.rm = TRUE)
+  )
 
 
-# 共线性检验
-library(car)
-anova(m1, m2)
-summary(m2)
-R2_m1 <- summary(m1)$r.squared
-R2_m2 <- summary(m2)$r.squared
-
-R2_m2 - R2_m1
-
-
-vif_values <- vif(m2)
-vif_values
-vif_table <- data.frame(
-  Variable=names(vif_values),
-  VIF=round(vif_values,2)
-)
-
-# 5. 稳健回归
-m2_robust <- rlm(Abundant_Top10 ~ Plant_Richness + Pollinator_Richness + Nestedness, data = test)
-vif(m2_robust)
-summary(m2_robust)
-
-# 6. 模型诊断
-# 残差图
-par(mfrow = c(2, 2))
-plot(m2)
-par(mfrow = c(1, 1))
-
-# 残差正态性
-shapiro_test <- shapiro.test(residuals(m2))
-bptest_test <- bptest(m2)
-
-# Cook's distance
-cooks_d <- cooks.distance(m2)
-n <- length(cooks_d)
-threshold <- 4 / n
-influential <- sum(cooks_d > threshold)
-
-#The effectiveness of abundance-based plant selection was primarily constrained 
-# by plant community size, with larger plant communities reducing the proportion of 
-# pollinator richness captured by a fixed number of monitored species. However, 
-# network structure also played an important role: more nested networks showed higher
-# capture efficiency, suggesting that abundant plants represent pollinator communities 
-# more effectively when interactions are concentrated around core plant species.
-
-# 7. 提取稳健回归结果（用于表格）
-# 使用 tidy() + 手动计算 p 值
-coef_tab <- as.data.frame(
-  summary(m2_robust)$coefficients
-)
-
-coef_tab <- coef_tab[-1,]
-
-
-tidy_robust <- data.frame(
-  Variable = rownames(coef_tab),
-  Estimate_SE = paste0(
-    round(coef_tab$Value,3),
-    " ± ",
-    round(coef_tab$`Std. Error`,3)
-  ),
-  t = round(coef_tab$`t value`,2),
-  P = 2*(1-pt(abs(coef_tab$`t value`),df=264))
-)
-
-
-tidy_robust$P <- ifelse(
-  tidy_robust$P <0.001,
-  "<0.001",
-  sprintf("%.3f",tidy_robust$P)
-)
-
-rownames(tidy_robust)<-NULL
-
-tidy_robust <- left_join(
-  tidy_robust,
-  vif_table,
-  by=c("Variable"="Variable")
-)
 
 # =========================
-# 8. Word报告
+
+# Table output
+
+# Abundant_Top10 回归分析
+
 # =========================
 
 doc <- read_docx()
@@ -801,60 +527,6 @@ print(
 )
 
 
-########## marginal effect
-library(ggeffects)
-library(ggplot2)
-
-plant_eff <- ggpredict(
-  m2,
-  terms = "Plant_Richness"
-)
-
-p1 <- ggplot(plant_eff,
-             aes(x=x,
-                 y=predicted)) +
-  geom_ribbon(
-    aes(ymin=conf.low,
-        ymax=conf.high),
-    alpha=0.2
-  ) +
-  geom_line(
-    color = "#66C2A5",
-    linewidth=1
-  ) +
-  labs(
-    x="Plant richness",
-    y="Pollinator richness captured (%)"
-  ) +
-  theme_classic(base_size=13)
-
-p1
-
-nested_eff <- ggpredict(
-  m2,
-  terms="Nestedness"
-)
-
-
-p2 <- ggplot(nested_eff,
-             aes(x=x,
-                 y=predicted)) +
-  geom_ribbon(
-    aes(ymin=conf.low,
-        ymax=conf.high),
-    alpha=0.2
-  ) +
-  geom_line(
-    color = "#66C2A5",
-    linewidth=1
-  ) +
-  labs(
-    x="Nestedness",
-    y="Pollinator richness captured (%)"
-  ) +
-  theme_classic(base_size=13)
-
-p2
 # -------------------- plot--------------------
 p_top10_plant <- plot_top10_relation(
   n_all_plant,
@@ -869,11 +541,11 @@ p_top10_rich <- plot_top10_relation(
   "Total Pollinator Richness"
 )
 
-p_top10_even <- plot_top10_relation(
-  evenness_df,
-  "Evenness",
-  "Pollinator Evenness (Within-Network)"
-)
+# p_top10_even <- plot_top10_relation(
+#   evenness_df,
+#   "Evenness",
+#   "Pollinator Evenness (Within-Network)"
+# )
 
 p_top10_nested <- plot_top10_relation(
   nestedness_df,
@@ -882,51 +554,14 @@ p_top10_nested <- plot_top10_relation(
 )
 
 
-top10_four_plot <- plot_grid(
-  p_top10_plant,
-  p_top10_rich,
-  p_top10_even,
-  p_top10_nested,
-  ncol = 2,
-  nrow = 2,
-  align = "hv"
-)
-
-# -------------------- 添加共享Y轴标题 --------------------
-top10_with_ylabel <- plot_grid(
-  ggdraw() +
-    draw_label(
-      "Percent of Pollinator Richness Captured",
-      angle = 90,
-      fontface = "bold",
-      size = 14
-    ),
-  
-  top10_four_plot,
-  
-  ncol = 2,
-  rel_widths = c(0.12, 1)
-)
-
-# 显示
-print(top10_with_ylabel)
-
-
-ggsave(
-  "result_260526/top10_influence_factor_4penal.png",
-  top10_with_ylabel,
-  width = 6.5, height = 6,
-  dpi = 300
-)
-
 ############新图
-plant_df <- result_all[, c("Study_Network_id", "Abundant_Top10")] %>%
+plant_df <- result_all[, c("Study_Network_id", "percentage_Abun10")] %>%
   left_join(
     n_all_plant,
     by = "Study_Network_id"
   ) %>%
   filter(
-    !is.na(Abundant_Top10),
+    !is.na(percentage_Abun10),
     !is.na(Plant_Richness)
   ) %>%
   mutate(
@@ -934,28 +569,28 @@ plant_df <- result_all[, c("Study_Network_id", "Abundant_Top10")] %>%
     Richness = Plant_Richness
   )
 
-pollinator_df <- result_all[, c("Study_Network_id", "Abundant_Top10")] %>%
+pollinator_df <- result_all[, c("Study_Network_id", "percentage_Abun10")] %>%
   left_join(
     plot_rich_site,
     by="Study_Network_id"
   ) %>%
   filter(
-    !is.na(Abundant_Top10),
-    !is.na(Total_Rich)
+    !is.na(percentage_Abun10),
+    !is.na(total_pollinator_count_Abun10)
   ) %>%
   mutate(
     Predictor="Pollinator richness",
-    Richness=Total_Rich
+    Richness=total_pollinator_count_Abun10
   )
 
 richness_compare <- bind_rows(
   plant_df[,c("Study_Network_id",
-              "Abundant_Top10",
+              "percentage_Abun10",
               "Predictor",
               "Richness")],
   
   pollinator_df[,c("Study_Network_id",
-                   "Abundant_Top10",
+                   "percentage_Abun10",
                    "Predictor",
                    "Richness")]
 )
@@ -964,11 +599,11 @@ stats_richness <- richness_compare %>%
   group_by(Predictor) %>%
   summarise(
     r = cor(Richness,
-            Abundant_Top10,
+            percentage_Abun10,
             method="pearson"),
     p = summary(
       lm(
-        Abundant_Top10 ~ Richness
+        percentage_Abun10 ~ Richness
       )
     )$coefficients[2,4]
   )
@@ -979,7 +614,7 @@ p_top10_richness_compare <- ggplot(
   richness_compare,
   aes(
     x = Richness,
-    y = Abundant_Top10,
+    y = percentage_Abun10,
     group = Predictor,
     color = Predictor,
     shape = Predictor
@@ -1076,6 +711,7 @@ ggsave(
   width = 6, height = 5.5,
   dpi = 300
 )
+
 ###############################################################################
 
 ##-----------(3) hypothesis 3 : Favored plant sp by pollinators is rare (plant abundance-interaction times) 
@@ -1373,12 +1009,12 @@ run_present_absent_test <- function(data, rare_q, attr_q) {
               by = "Study_Network_id")
   
   # Wilcoxon
-  wt <- wilcox.test(Abundant_Top10 ~ group, data = df_test)
+  wt <- wilcox.test(percentage_Abun10 ~ group, data = df_test)
   
   # effect size (Cliff’s delta approx via median diff)
   eff <- with(df_test,
-              median(Abundant_Top10[group=="Present"], na.rm=TRUE) -
-                median(Abundant_Top10[group=="Absent"], na.rm=TRUE))
+              median(percentage_Abun10[group=="Present"], na.rm=TRUE) -
+                median(percentage_Abun10[group=="Absent"], na.rm=TRUE))
   
   tibble(
     rare_q = rare_q,
@@ -1620,10 +1256,10 @@ network_group
 attract_percent_10 <- percent_10 %>%
   left_join(network_group %>% dplyr::select(Study_Network_id, present_group), by = "Study_Network_id")
 
-shapiro.test(attract_percent_10$Abundant_Top10[attract_percent_10$present_group=="Present"])
-shapiro.test(attract_percent_10$Abundant_Top10[attract_percent_10$present_group=="Absent"])
+shapiro.test(attract_percent_10$percentage_Abun10[attract_percent_10$present_group=="Present"])
+shapiro.test(attract_percent_10$percentage_Abun10[attract_percent_10$present_group=="Absent"])
 
-wilcox.test(Abundant_Top10 ~ present_group, data = attract_percent_10)
+wilcox.test(percentage_Abun10 ~ present_group, data = attract_percent_10)
 
 
 library(ggplot2)
@@ -1639,7 +1275,7 @@ attract_percent_10 <- attract_percent_10 %>%
   )
 
 # 2️⃣ Wilcoxon test
-wilcox_res <- wilcox.test(Abundant_Top10 ~ present_group, data = attract_percent_10)
+wilcox_res <- wilcox.test(percentage_Abun10 ~ present_group, data = attract_percent_10)
 
 sig_label <- if(wilcox_res$p.value < 0.001) {
   "***"
@@ -1655,16 +1291,16 @@ sig_label <- if(wilcox_res$p.value < 0.001) {
 data_summary <- attract_percent_10 %>%
   group_by(present_group) %>%
   summarise(
-    Mean_Percentage = mean(Abundant_Top10, na.rm = TRUE),
-    SD_Percentage = sd(Abundant_Top10, na.rm = TRUE),
-    n_non_missing = sum(!is.na(Abundant_Top10)),
+    Mean_Percentage = mean(percentage_Abun10, na.rm = TRUE),
+    SD_Percentage = sd(percentage_Abun10, na.rm = TRUE),
+    n_non_missing = sum(!is.na(percentage_Abun10)),
     .groups = "drop"
   )
 
 group_colors <- c("Present" = "#E41A1C", "Absent" = "#377EB8")
 
 # 4️⃣ y 位置
-y_max <- max(attract_percent_10$Abundant_Top10, na.rm = TRUE)
+y_max <- max(attract_percent_10$percentage_Abun10, na.rm = TRUE)
 y_pos <- y_max * 1.1
 
 # =========================
@@ -1672,7 +1308,7 @@ y_pos <- y_max * 1.1
 # =========================
 plot <- ggplot(attract_percent_10,
                aes(x = present_group,
-                   y = Abundant_Top10,
+                   y = percentage_Abun10,
                    fill = present_group)) +
   
   geom_violin(trim = FALSE, alpha = 0.35, color = NA) +
@@ -1738,9 +1374,9 @@ library(officer)
 table2 <- attract_percent_10 %>%
   group_by(present_group) %>%
   summarise(
-    Mean = mean(Abundant_Top10, na.rm = TRUE),
-    SD = sd(Abundant_Top10, na.rm = TRUE),
-    n = sum(!is.na(Abundant_Top10)),
+    Mean = mean(percentage_Abun10, na.rm = TRUE),
+    SD = sd(percentage_Abun10, na.rm = TRUE),
+    n = sum(!is.na(percentage_Abun10)),
     .groups = "drop"
   ) %>%
   
@@ -2182,12 +1818,12 @@ strong_network <- network_perm %>%
 
 strong_network
 
-strongdata<-plottest%>%filter(Study_Network_id %in% strong_network$Network)%>%select(Study_Network_id,Abundant_Top5,FlwShape_Top5)
+strongdata<-plottest%>%filter(Study_Network_id %in% strong_network$Network)%>%select(Study_Network_id,percentage_Abun5,FlwShape_Top5)
 
-t.test(strongdata$Abundant_Top5,
+t.test(strongdata$percentage_Abun5,
        strongdata$FlwShape_Top5,
        paired = TRUE)
-wilcox.test(strongdata$Abundant_Top5,
+wilcox.test(strongdata$percentage_Abun5,
             strongdata$FlwShape_Top5,
             paired = TRUE)
 
@@ -3217,3 +2853,221 @@ ggsave("/Chap1_TargetPlant_to_monitor/result_260526/visit_group.png", visit_grou
 
 
 
+
+
+
+###########
+
+#Factors influencing the effectiveness of subsampling
+
+#################################################################################
+
+##-----------(1) hypothesis 1 : 10 plant not enough for large networks------------
+
+# 2.绘制对传粉者交互多度的影响 （possible supplement）
+
+# Interaction_abun <- result10 %>%
+#   filter(!is.na(Interaction_addup)) %>%  # 删除 Interaction_addup 是 NA 的行
+#   group_by(Study_Network_id) %>%
+#   summarise(Interaction_addup = sum(Interaction_addup), .groups = "drop")
+# 
+# total_Interaction<-data_interact %>%
+#   group_by(Study_Network_id) %>%
+#   summarise(Interaction_total = sum(Interaction_addup), .groups = "drop")
+
+# Interaction_captured<-total_Interaction%>%
+#   left_join(Interaction_abun, by = "Study_Network_id") %>%
+#   mutate(percent = (Interaction_addup/Interaction_total) * 100 )
+# 
+# Interaction_captured<-merge(Interaction_captured, plant_percent,by.x = "Study_Network_id", by.y = "Study_Network_id", all = TRUE)%>% drop_na()
+
+#model4 <- lm(percent ~ n_all_plant, data = Interaction_captured)
+#summary(model4)
+
+#############################
+# 添加分组标签，并确保列名一致
+# df1 <- plotplotplot %>%
+#   mutate(
+#     percent = percentage_Abun10,
+#     Group = "Pollinator Richness"
+#   ) %>%
+#   select(plant_percent, percent, Group)
+
+# df2 <- Interaction_captured %>%
+#   mutate(Group = "Pollinator Interactions") %>%
+#   select(plant_percent, percent, Group)
+# 
+# # 合并两个数据框
+# combined_df <- bind_rows(df1, df2)
+# 
+# # 自定义颜色
+# my_colors <- c(
+#   "Pollinator Richness" = "darkred",     # 红色
+#   "Pollinator Interactions" = "#9E9AC8"     # 蓝色
+# )
+
+# 绘图
+# combined_plot <- ggplot(combined_df, aes(x = plant_percent, y = percent, color = Group)) +
+#   geom_point(shape = 1, size = 2.5, position = position_jitter(width = 0.03, height = 0.5)) +
+#   geom_smooth(method = "lm", se = FALSE, size = 0.8) +
+#   scale_color_manual(values = my_colors) +
+#   labs(
+#     x = "Plant Species Coverage by Top 10 Abundant Plants",
+#     y = "% Captured",
+#     color = NULL
+#   ) +
+#   theme_bw(base_size = 12) +
+#   theme(
+#     panel.background = element_blank(),
+#     panel.grid = element_blank(),
+#     panel.border = element_rect(color = "grey80", fill = NA, linewidth = 0.5),
+#     plot.margin = margin(10, 10, 10, 10),
+#     strip.background = element_rect(fill = "white", color = NA),
+#     strip.text = element_text(size = 12, face = "bold"),
+#     legend.position = "top",
+#     legend.text = element_text(size = 11),
+#     legend.title = element_blank()
+#   )
+# 
+# print(combined_plot)#500*500
+#####################################
+# 数据准备
+# df1 <- plotplotplot %>%
+#   mutate(
+#     percent = percentage_Abun10,
+#     Group = "Pollinator Richness"
+#   ) %>%
+#   dplyr::select(n_all_plant, percent, Group)
+
+# df2 <- Interaction_captured %>%
+#   mutate(Group = "Pollinator Interactions") %>%
+#   select(n_all_plant, percent, Group)
+# 
+# combined_df <- bind_rows(df1, df2)
+# 
+# my_colors <- c(
+#   "Pollinator Richness" = "darkred",
+#   "Pollinator Interactions" = "#9E9AC8"
+# )
+
+
+# combined_plot <- ggplot(combined_df, aes(x = n_all_plant, y = percent, color = Group)) +
+#   geom_point(shape = 1, size = 2.5, position = position_jitter(width = 0.03, height = 0.5)) +
+#   geom_smooth(method = "lm", se = FALSE, size = 0.8, fullrange = FALSE) + # 拟合线只在数据范围内
+#   scale_color_manual(values = my_colors) +
+#   labs(
+#     x = "Number of Plant Species in the Network",
+#     y = "Percent of Pollinator Richness Captured by Subsampling",
+#     color = NULL
+#   ) +
+#   coord_cartesian(ylim = c(0, 100)) +   # 固定 y 轴范围在 0-100
+#   theme_bw(base_size = 12) +
+#   theme(
+#     panel.background = element_blank(),
+#     panel.grid = element_blank(),
+#     panel.border = element_rect(color = "grey80", fill = NA, linewidth = 0.5),
+#     plot.margin = margin(10, 10, 10, 10),
+#     strip.background = element_rect(fill = "white", color = NA),
+#     strip.text = element_text(size = 12, face = "bold"),
+#     legend.position = "top",
+#     legend.text = element_text(size = 11),
+#     legend.title = element_blank()
+#   )
+
+# library(ggpubr)
+# set.seed(2025)
+# df1_plot <- ggplot(df1, aes(x = n_all_plant, y = percent)) +
+#   geom_point(shape = 1, size = 2.5, color = "#9E9AC8", 
+#              position = position_jitter(width = 0.03, height = 0.5)) +
+#   geom_smooth(method = "lm", se = FALSE, size = 0.8, color = "#9E9AC8") +
+#   stat_cor(
+#     method = "pearson",
+#     label.x.npc = 0.05,
+#     label.y.npc = 0.05,
+#     aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
+#     r.accuracy = 0.01,
+#     p.accuracy = 0.001,
+#     size = 5
+#   ) +
+#   labs(
+#     x = "Number of Plant Species in the Network",
+#     y = "Percent of Pollinator Richness\nCaptured by Subsampling"
+#   ) +
+#   scale_x_continuous(breaks = seq(floor(min(df1$n_all_plant)),
+#                                   ceiling(max(df1$n_all_plant)),
+#                                   by = 10))+
+#   #coord_cartesian(ylim = c(0, 100)) +
+#   theme_classic(base_size = 12) +
+#   theme(
+#     plot.title = element_text(hjust = 0.5, face = "bold", size = 15),
+#     axis.title = element_text(face = "bold", size = 15),
+#     axis.text = element_text(color = "black", size = 12),
+#     legend.position = "none",
+#     plot.margin = margin(5, 15, 5, 5)
+#   )
+# 
+# print(df1_plot)#500*500
+# ggsave("./result_260526/n_plant_inter_rich_remove_grass.png", 
+#        df1_plot, width = 5, height = 4.5, units = "in", dpi = 300)
+# 
+# summary(model2)
+# 
+
+
+
+
+########### Test the covirence betweenpollinator richness, plant richness and network size, and the effect of them on susampling effectiveness ######
+# ########## marginal effect
+# library(ggeffects)
+# library(ggplot2)
+# 
+# plant_eff <- ggpredict(
+#   m2,
+#   terms = "Plant_Richness"
+# )
+# 
+# p1 <- ggplot(plant_eff,
+#              aes(x=x,
+#                  y=predicted)) +
+#   geom_ribbon(
+#     aes(ymin=conf.low,
+#         ymax=conf.high),
+#     alpha=0.2
+#   ) +
+#   geom_line(
+#     color = "#66C2A5",
+#     linewidth=1
+#   ) +
+#   labs(
+#     x="Plant richness",
+#     y="Pollinator richness captured (%)"
+#   ) +
+#   theme_classic(base_size=13)
+# 
+# p1
+# 
+# nested_eff <- ggpredict(
+#   m2,
+#   terms="Nestedness"
+# )
+# 
+# 
+# p2 <- ggplot(nested_eff,
+#              aes(x=x,
+#                  y=predicted)) +
+#   geom_ribbon(
+#     aes(ymin=conf.low,
+#         ymax=conf.high),
+#     alpha=0.2
+#   ) +
+#   geom_line(
+#     color = "#66C2A5",
+#     linewidth=1
+#   ) +
+#   labs(
+#     x="Nestedness",
+#     y="Pollinator richness captured (%)"
+#   ) +
+#   theme_classic(base_size=13)
+# 
+# p2
