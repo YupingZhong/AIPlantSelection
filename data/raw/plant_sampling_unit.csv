@@ -1,0 +1,33 @@
+﻿Study_id,Flower sampling methods,Comments,Sampled ONLY flowering species,Doi
+2_Petanidou,Number of flowers/sub-inflorescences/stalks/heads/inflorescences/spikes per square meter,,yes,NA
+4_Marini,Relative abundance of the flowering plant at the site,"""all flowering species excluding B. davidii""",yes,https://doi.org/10.1111/ddi.13132
+5_Marini,Relative abundance of the flowering plant at the site,"""we identified all flowering plant species and assessed their relative abundance""",yes,https://doi.org/10.1007/s00442-022-05151-6
+6_Marini,Relative abundance of the flowering plant at the site,,yes,NA
+7_Scheper,Percentage of flower cover per square centimeter,,yes,https://doi.org/10.1111/1365-2664.13658
+8_Biella,Number of flowers per square meter,,yes,https://doi.org/10.1556/168.2017.18.1.1
+9_Heleno,Number of flowers of each species for the whole transects,,yes,https://doi.org/10.1007/s00442-018-4281-5
+11_Clough,Number of flowers per 3x3m quadrat,,yes,NA
+12_Ockinger,Number of flowers per square meter,,yes,https://doi.org/10.1038/s41598-019-51912-4
+15_Magrach,Number of flowers of each species for the whole transects,,yes,Unpublished
+20_Hoiss,Percentage of flower cover per 4x4m quadrat,'we estimated the ﬂower cover of every insect pollinated plant species as the percentage of the total area (4 9 4 m) per treatment plot.'',yes,https://doi.org/10.1111/gcb.12968
+22_Kallnik,Percentage of flower cover per square meter,,yes,https://doi.org/10.1111/oik.08902 and https://doi.org/10.1002/ecy.3712
+28_Sutter,Percentage of flower cover per square meter,,yes,https://doi.org/10.1111/1365-2664.12907
+29_Magrach,Percentage of flower cover per square meter,,yes,https://doi.org/10.1038/s41559-017-0249-9
+30_Smith,Percentage of flower cover per square meter,,yes,https://doi.org/10.1111/ele.12657
+31_Roberts,Percentage of flower cover per square meter,,yes,https://doi.org/10.1111/ele.12657
+34_Stanley,Mean flower number/species per site,,yes,https://doi.org/10.1111/1365-2664.12060
+36_Larkin,Mean flower number/species per site,,yes,https://doi.org/10.1111/1365-2664.13990
+37_White,Mean abundance per flowering plant species,"""Flowers were sampled by noting every flowering species on the outward walk of the transect and then counting the floral units of each species on the return walk. A floral unit was defined as an individual flower or collection of flowers that an insect of 5 mm body length could walk between (see Baldock et al., 2015, Supplementary Table S5) and comprised a single capitulum for Asteraceae, a secondary umbel for Apiaceae and a single flower for most other taxa. Grasses, sedges and wind-pollinated forbs were not sampled.""",yes,https://doi.org/10.3389/fevo.2022.806615
+38_Maurer,Mean flower number per square meter and site,,yes,Unpublished
+39_Schweiger,Number of flowers per square meter,,yes,Unpublished
+40_Knight,"Flowers or inflorescences abundance categories (high, medium and low)",,yes,https://doi.org/10.1093/aobpla/ply068
+41_Knight,Percentage of flowers or inflorescences cover per 60 square meters,,yes,https://doi.org/10.1002/ece3.8325
+42_Knight,Percentage of flowers or inflorescences cover per 60 square meters,,yes,NA
+44_Knight,Percentage of flower cover,,yes,NA
+45_Knight,Percentage of flower cover,,yes,https://doi.org/10.1371/journal.pone.0263576
+46_Knight,Percentage of flower cover,,yes,unpublished
+47_Benadi,Percentage of flower cover per square meters,"""For each plant species, the total flower area per site was calculated by multiplying the number of counted flowers in quadrats by the average area of a single flower or flowering unit and by extrapolating from the quadrat samples to the total area covered by all transects at a site (600 m²).""",yes,https://doi.org/10.1111/1365-2656.12158
+49_Hervias-Parejo,Mean flower number per species-site-day,,yes,https://doi.org/10.1101/2023.07.02.547400
+50_Hervias-Parejo,Mean flower number per species-site-day,,yes,https://doi.org/10.1111/oik.09818
+51_Petanidou,Number of flowers per square meter,,yes,#N/A
+54_Lazaro,Number of flowers/inflorescences per 30 square meters,,yes,

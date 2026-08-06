@@ -9,7 +9,7 @@
 
 # - data/raw/Interaction_data_published.rds
 # - data/raw/Flower_counts_published.rds
-# - data/raw/test.merge.trait.csv
+# - data/processed/merge.trait.csv
 # - data/raw/species_checked_wof.csv
 # - data/raw/plant_sampling_unit.csv
 
@@ -36,13 +36,13 @@ metadata <- readRDS("data/raw/Interaction_data_published.rds") %>%
 
 meta_count <- readRDS("data/raw/Flower_counts_published.rds") #The EuPPollNet flower data
 
-species_correct <- read.csv("species_checked_wof.csv") %>%
+species_correct <- read.csv("data/raw/species_checked_wof.csv") %>%
   select(WOF_name,original_name)%>%
   mutate(Plant_species = original_name)
 
-traits <- read.csv("test.merge.trait.csv", header = TRUE, fileEncoding = "UTF-8")
+traits <- read.csv("data/processesd/merge.trait.csv", header = TRUE, fileEncoding = "UTF-8")
 
-plant_unit <- read.csv("plant_sampling_unit.csv") %>%
+plant_unit <- read.csv("data/raw/plant_sampling_unit.csv") %>%
   select("Study_id","Flower.sampling.methods")%>%
   filter (Study_id %in% final_study_id)
 setdiff(final_study_id, plant_unit$`Study ID`)

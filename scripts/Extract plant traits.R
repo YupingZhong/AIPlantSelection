@@ -24,4 +24,4 @@ print(rows_with_na)
 
 print(tr8_result)
 #write.csv(tr8_result@results, "merge_plantlist_trait.csv", row.names = TRUE)
-#then manual check and revise the plant traits.see "test.merge.trait.csv"
+#then manual check and revise the plant traits.see "merge.trait.csv"
