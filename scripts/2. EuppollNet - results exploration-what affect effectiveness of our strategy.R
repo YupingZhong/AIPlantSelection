@@ -1,5 +1,4 @@
 
-setwd("D:/Chap1_TargetPlant_to_mo-nitor")
 library(dplyr)
 library(ggplot2) #For plotting
 library(giscoR) #For plotting

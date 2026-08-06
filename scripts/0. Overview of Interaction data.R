@@ -155,16 +155,10 @@ map = ggplot(countries) +
   )
 
 map
+#ggsave("/Chap1_TargetPlant_to_monitor/result_260526/map_1.png", map, width = 6, height = 6, units = "in", dpi = 300)
 
 
-ggsave("/Chap1_TargetPlant_to_monitor/result_260526/map_1.png", map, width = 6, height = 6, units = "in", dpi = 300)
-
-
-##################################3
-
-library(ggplot2)
-library(dplyr)
-library(patchwork)
+##################################
 
 plant_diversity <- data_count_scaled %>% 
   filter(Flower_count != 0) %>%

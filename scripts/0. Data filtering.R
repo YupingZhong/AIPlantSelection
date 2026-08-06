@@ -1,9 +1,21 @@
-##The full script
-##require data: Interaction_data.rds,Flower_counts.rds,test.merge.trait.csv
+############################################################
+# Optimising plant species selection for automated monitoring
+# Part 1: Data preparation and filtering
+############################################################
 
-### METHODS
-#### 1. data filtering
-getwd()
+# ==========================================================
+# Required input files
+# ==========================================================
+
+# - data/raw/Interaction_data_published.rds
+# - data/raw/Flower_counts_published.rds
+# - data/raw/test.merge.trait.csv
+# - data/raw/species_checked_wof.csv
+
+# ==========================================================
+# Load libraries
+# ==========================================================
+
 library(readxl)
 library(dplyr)
 library(tidyr)
@@ -12,7 +24,10 @@ library(stringr)
 library(ggplot2)
 library(cowplot)  
 
-#read data
+# ==========================================================
+# Load raw data
+# ==========================================================
+
 metadata<-readRDS("data/raw/Interaction_data_published.rds")%>%
   mutate(Study_Network_id = paste(Study_id, Network_id, sep = "_")) #The EuPPollNet interaction data
 
