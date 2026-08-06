@@ -639,3 +639,224 @@ ggsave(
 #        width = 13.5, height = 11, dpi = 300)
 
 ###########################
+
+
+
+
+
+
+###########
+
+#Factors influencing the effectiveness of subsampling
+
+#################################################################################
+
+##-----------(1) hypothesis 1 : 10 plant not enough for large networks------------
+
+# 2.绘制对传粉者交互多度的影响 （possible supplement）
+
+# Interaction_abun <- result10 %>%
+#   filter(!is.na(Interaction_addup)) %>%  # 删除 Interaction_addup 是 NA 的行
+#   group_by(Study_Network_id) %>%
+#   summarise(Interaction_addup = sum(Interaction_addup), .groups = "drop")
+# 
+# total_Interaction<-data_interact %>%
+#   group_by(Study_Network_id) %>%
+#   summarise(Interaction_total = sum(Interaction_addup), .groups = "drop")
+
+# Interaction_captured<-total_Interaction%>%
+#   left_join(Interaction_abun, by = "Study_Network_id") %>%
+#   mutate(percent = (Interaction_addup/Interaction_total) * 100 )
+# 
+# Interaction_captured<-merge(Interaction_captured, plant_percent,by.x = "Study_Network_id", by.y = "Study_Network_id", all = TRUE)%>% drop_na()
+
+#model4 <- lm(percent ~ n_all_plant, data = Interaction_captured)
+#summary(model4)
+
+#############################
+# 添加分组标签，并确保列名一致
+# df1 <- plotplotplot %>%
+#   mutate(
+#     percent = percentage_Abun10,
+#     Group = "Pollinator Richness"
+#   ) %>%
+#   select(plant_percent, percent, Group)
+
+# df2 <- Interaction_captured %>%
+#   mutate(Group = "Pollinator Interactions") %>%
+#   select(plant_percent, percent, Group)
+# 
+# # 合并两个数据框
+# combined_df <- bind_rows(df1, df2)
+# 
+# # 自定义颜色
+# my_colors <- c(
+#   "Pollinator Richness" = "darkred",     # 红色
+#   "Pollinator Interactions" = "#9E9AC8"     # 蓝色
+# )
+
+# 绘图
+# combined_plot <- ggplot(combined_df, aes(x = plant_percent, y = percent, color = Group)) +
+#   geom_point(shape = 1, size = 2.5, position = position_jitter(width = 0.03, height = 0.5)) +
+#   geom_smooth(method = "lm", se = FALSE, size = 0.8) +
+#   scale_color_manual(values = my_colors) +
+#   labs(
+#     x = "Plant Species Coverage by Top 10 Abundant Plants",
+#     y = "% Captured",
+#     color = NULL
+#   ) +
+#   theme_bw(base_size = 12) +
+#   theme(
+#     panel.background = element_blank(),
+#     panel.grid = element_blank(),
+#     panel.border = element_rect(color = "grey80", fill = NA, linewidth = 0.5),
+#     plot.margin = margin(10, 10, 10, 10),
+#     strip.background = element_rect(fill = "white", color = NA),
+#     strip.text = element_text(size = 12, face = "bold"),
+#     legend.position = "top",
+#     legend.text = element_text(size = 11),
+#     legend.title = element_blank()
+#   )
+# 
+# print(combined_plot)#500*500
+#####################################
+# 数据准备
+# df1 <- plotplotplot %>%
+#   mutate(
+#     percent = percentage_Abun10,
+#     Group = "Pollinator Richness"
+#   ) %>%
+#   dplyr::select(n_all_plant, percent, Group)
+
+# df2 <- Interaction_captured %>%
+#   mutate(Group = "Pollinator Interactions") %>%
+#   select(n_all_plant, percent, Group)
+# 
+# combined_df <- bind_rows(df1, df2)
+# 
+# my_colors <- c(
+#   "Pollinator Richness" = "darkred",
+#   "Pollinator Interactions" = "#9E9AC8"
+# )
+
+
+# combined_plot <- ggplot(combined_df, aes(x = n_all_plant, y = percent, color = Group)) +
+#   geom_point(shape = 1, size = 2.5, position = position_jitter(width = 0.03, height = 0.5)) +
+#   geom_smooth(method = "lm", se = FALSE, size = 0.8, fullrange = FALSE) + # 拟合线只在数据范围内
+#   scale_color_manual(values = my_colors) +
+#   labs(
+#     x = "Number of Plant Species in the Network",
+#     y = "Percent of Pollinator Richness Captured by Subsampling",
+#     color = NULL
+#   ) +
+#   coord_cartesian(ylim = c(0, 100)) +   # 固定 y 轴范围在 0-100
+#   theme_bw(base_size = 12) +
+#   theme(
+#     panel.background = element_blank(),
+#     panel.grid = element_blank(),
+#     panel.border = element_rect(color = "grey80", fill = NA, linewidth = 0.5),
+#     plot.margin = margin(10, 10, 10, 10),
+#     strip.background = element_rect(fill = "white", color = NA),
+#     strip.text = element_text(size = 12, face = "bold"),
+#     legend.position = "top",
+#     legend.text = element_text(size = 11),
+#     legend.title = element_blank()
+#   )
+
+# library(ggpubr)
+# set.seed(2025)
+# df1_plot <- ggplot(df1, aes(x = n_all_plant, y = percent)) +
+#   geom_point(shape = 1, size = 2.5, color = "#9E9AC8", 
+#              position = position_jitter(width = 0.03, height = 0.5)) +
+#   geom_smooth(method = "lm", se = FALSE, size = 0.8, color = "#9E9AC8") +
+#   stat_cor(
+#     method = "pearson",
+#     label.x.npc = 0.05,
+#     label.y.npc = 0.05,
+#     aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
+#     r.accuracy = 0.01,
+#     p.accuracy = 0.001,
+#     size = 5
+#   ) +
+#   labs(
+#     x = "Number of Plant Species in the Network",
+#     y = "Percent of Pollinator Richness\nCaptured by Subsampling"
+#   ) +
+#   scale_x_continuous(breaks = seq(floor(min(df1$n_all_plant)),
+#                                   ceiling(max(df1$n_all_plant)),
+#                                   by = 10))+
+#   #coord_cartesian(ylim = c(0, 100)) +
+#   theme_classic(base_size = 12) +
+#   theme(
+#     plot.title = element_text(hjust = 0.5, face = "bold", size = 15),
+#     axis.title = element_text(face = "bold", size = 15),
+#     axis.text = element_text(color = "black", size = 12),
+#     legend.position = "none",
+#     plot.margin = margin(5, 15, 5, 5)
+#   )
+# 
+# print(df1_plot)#500*500
+# ggsave("./result_260526/n_plant_inter_rich_remove_grass.png", 
+#        df1_plot, width = 5, height = 4.5, units = "in", dpi = 300)
+# 
+# summary(model2)
+# 
+
+
+
+
+########### Test the covirence betweenpollinator richness, plant richness and network size, and the effect of them on susampling effectiveness ######
+# ########## marginal effect
+# library(ggeffects)
+# library(ggplot2)
+# 
+# plant_eff <- ggpredict(
+#   m2,
+#   terms = "Plant_Richness"
+# )
+# 
+# p1 <- ggplot(plant_eff,
+#              aes(x=x,
+#                  y=predicted)) +
+#   geom_ribbon(
+#     aes(ymin=conf.low,
+#         ymax=conf.high),
+#     alpha=0.2
+#   ) +
+#   geom_line(
+#     color = "#66C2A5",
+#     linewidth=1
+#   ) +
+#   labs(
+#     x="Plant richness",
+#     y="Pollinator richness captured (%)"
+#   ) +
+#   theme_classic(base_size=13)
+# 
+# p1
+# 
+# nested_eff <- ggpredict(
+#   m2,
+#   terms="Nestedness"
+# )
+# 
+# 
+# p2 <- ggplot(nested_eff,
+#              aes(x=x,
+#                  y=predicted)) +
+#   geom_ribbon(
+#     aes(ymin=conf.low,
+#         ymax=conf.high),
+#     alpha=0.2
+#   ) +
+#   geom_line(
+#     color = "#66C2A5",
+#     linewidth=1
+#   ) +
+#   labs(
+#     x="Nestedness",
+#     y="Pollinator richness captured (%)"
+#   ) +
+#   theme_classic(base_size=13)
+# 
+# p2
