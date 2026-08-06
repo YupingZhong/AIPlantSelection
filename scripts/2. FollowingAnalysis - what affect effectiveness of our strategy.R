@@ -21,8 +21,8 @@ library(vegan)
 
 ##-----------(1) hypothesis 1 : 10 plant not enough for large networks------------
 
-data_count_scaled<-readRDS("data/processed/data_count_scaled_published_0526.rds")
-data_interact<-readRDS("data/processed/data_interact_published_0526.rds")
+data_count_scaled<-readRDS("data/processed/data_count_scaled_published.rds")
+data_interact<-readRDS("data/processed/data_interact_published.rds")
 data_merge<-readRDS("data/processed/data_merge.rds")
 percent_10<-readRDS("data/processed/percent_10.rds")
 

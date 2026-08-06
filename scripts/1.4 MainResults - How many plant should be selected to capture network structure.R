@@ -1,41 +1,9 @@
 
 ##1.Data overview
-library(dplyr)
-library(ggplot2) #For plotting
-library(giscoR) #For plotting
-library(patchwork)#For plotting (binding plots)
-library(ggstar) #For plotting (cool shapes)
-library(scales) #For plotting (decimals on axes)
-library(tidyr)
-library(viridis)
-library(stringr)
-library(vegan)
-setwd("E:/Chap1_TargetPlant_to_monitor")
 ##################plant and pollinator species distribution
-data_count_scaled<-readRDS("data_count_scaled_published_0526.rds")
-data_interact<-readRDS("data_interact_published_0526.rds")
-traits<-read.csv("test.merge.trait.csv", header = TRUE, fileEncoding = "UTF-8")
-
-data_interact<-data_interact%>%
-  mutate(
-    Plant_accepted_name = str_replace_all(Plant_accepted_name, "×", "") %>%  
-      str_squish()  
-  )
-
-data_merge<- merge(data_interact, data_count_scaled[,c("Flower_data_merger","Flower_count_scaled","Plant_species","Study_Network_id")], 
-                   by = "Flower_data_merger",all = TRUE)%>%
-  filter(!is.na(Flower_data_merger))%>%
-  mutate(
-    Study_Network_id = coalesce(Study_Network_id.x, Study_Network_id.y)
-  ) %>%
-  dplyr::select(-Study_Network_id.x, -Study_Network_id.y)%>%
-  mutate(Interaction_addup = ifelse(is.na(Interaction_addup), 0, Interaction_addup))%>% # 替换 `Interaction_addup` 为 NA 的值为 0
-  mutate(
-    Plant_accepted_name = str_squish(str_replace_all(replace_na(Plant_accepted_name, ""), "×", ""))
-  ) 
-
-
-data_merge_trait <- left_join(data_merge, traits, by = "Plant_accepted_name")
+data_count_scaled<-readRDS("data/processed/data_count_scaled_published.rds")
+data_interact<-readRDS("data/processed/data_interact_published.rds")
+traits<-read.csv("data/processed/merge.trait.csv", header = TRUE, fileEncoding = "UTF-8")
 
 
 ########################################################

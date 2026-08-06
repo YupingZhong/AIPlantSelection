@@ -24,8 +24,8 @@ library(vegan)
 
 
 ##################plant and pollinator species distribution
-data_count_scaled<-readRDS("data/processed/data_count_scaled_published_0526.rds")
-data_interact<-readRDS("data/processed/data_interact_published_0526.rds")
+data_count_scaled<-readRDS("data/processed/data_count_scaled_published.rds")
+data_interact<-readRDS("data/processed/data_interact_published.rds")
 unique(data_count_scaled$Study_Network_id)
 colnames(data_count_scaled)
 
@@ -167,7 +167,7 @@ result10 <-
   group_by(Study_Network_id) %>%
   ungroup()
 
-
+saveRDS(result10,"data/processed/selected_plant_result_abun10.rds")
 
 sp_number10 <- result10 %>%
   ungroup%>%
@@ -422,16 +422,18 @@ colnames(cov_floral_3)[colnames(cov_floral_3) == "prop_interactions"] <- "FlwSha
 
 
 ############################################################################
-
 #----2.3 Phylo distance-----------------------
 
-# to obtain the phylogenetic info
-### phylo info
 library(dplyr)
 library(stringr)
+library(tidyr)
 library(V.PhyloMaker2)
 library(ape)
-library(picante)
+
+
+#------------------------------------
+# 1. Prepare species list for phylogeny
+#------------------------------------
 
 plant_sp <- data_count_scaled %>%
   distinct(Plant_species) %>%
@@ -443,24 +445,22 @@ plant_sp <- data_count_scaled %>%
            ignore.case = TRUE)
   ) %>%
   rename(species = Plant_species) %>%
-  mutate(species = gsub(" ", "_", species)) %>%
+  mutate(
+    species = gsub(" ", "_", species)
+  ) %>%
   left_join(
     tips.info.TPL[, c("species", "genus", "family")],
     by = "species"
   )
 
 
-head(plant_sp$species)
-names(plant_sp)
-head(plant_sp)
-nrow(plant_sp)
-head(tips.info.TPL)
+#------------------------------------
+# 2. Build phylogenetic tree
+#------------------------------------
 
-data(package = "V.PhyloMaker2")
 data("GBOTB.extended.TPL")
 data("nodes.info.TPL")
 
-class(GBOTB.extended.TPL)
 
 phylo_result <- phylo.maker(
   sp.list = plant_sp,
@@ -468,24 +468,61 @@ phylo_result <- phylo.maker(
   scenarios = "S3"
 )
 
-phylo_result$species.list
 phylo_tree <- phylo_result$scenario.3
 
+
+# optional check
 phylo_tree
 
-phylo_dist <- cophenetic(phylo_tree)
-phylo_dist[1:5,1:5]
+
+#------------------------------------
+# 3. Prepare PD dataset
+#------------------------------------
+
+data_PD <- data_count_scaled %>%
+  filter(
+    !is.na(Plant_species),
+    str_count(Plant_species, "\\S+") >= 2,
+    !grepl("\\bsp\\.?\\b|cf\\.|aff\\.",
+           Plant_species,
+           ignore.case = TRUE)
+  ) %>%
+  mutate(
+    Plant_species_tree = gsub(" ", "_", Plant_species)
+  )
 
 
-phylo_tree$tip.label
+# species that are present in tree
+
+data_PD_tree <- data_PD %>%
+  filter(
+    Plant_species_tree %in% phylo_tree$tip.label
+  )
+
+
+#------------------------------------
+# 4. Check phylogenetic matching
+#------------------------------------
+
+match_check <- data_PD %>%
+  group_by(Study_Network_id) %>%
+  summarise(
+    n_total = n_distinct(Plant_species_tree),
+    n_tree = sum(
+      Plant_species_tree %in% phylo_tree$tip.label
+    ),
+    match_rate = n_tree / n_total,
+    .groups="drop"
+  )
+
+summary(match_check$n_tree)
+head(match_check)
 
 
 
-###### strategy 3
-library(ape)
-library(dplyr)
-library(tidyr)
-
+#------------------------------------
+# 5. Select phylogenetic diversity species
+#------------------------------------
 
 select_PD_species <- function(species_pool, phylo_tree, n_select){
   
@@ -494,7 +531,6 @@ select_PD_species <- function(species_pool, phylo_tree, n_select){
     phylo_tree$tip.label
   )
   
-  # 不足目标数量，返回NA
   if(length(species_pool) < n_select){
     return(NA)
   }
@@ -535,133 +571,148 @@ select_PD_species <- function(species_pool, phylo_tree, n_select){
   selected
 }
 
-match_check <- data_PD %>%
-  group_by(Study_Network_id) %>%
-  summarise(
-    n_total = n_distinct(Plant_species_tree),
-    n_tree = sum(
-      Plant_species_tree %in% phylo_tree$tip.label
-    )
-  )
 
-summary(match_check$n_tree)
 
-head(match_check)
 #------------------------------------
-# PD top10 5 3
+# 6. PD top10, top5, top3
 #------------------------------------
-PD_selected <- lapply(c(10,5,3), function(n){
-  
-  data_PD_tree %>%
-    group_by(Study_Network_id) %>%
-    summarise(
-      Plant_species_tree = list(
-        select_PD_species(
-          Plant_species_tree,
-          phylo_tree,
-          n
-        )
-      ),
-      .groups="drop"
-    ) %>%
-    filter(!is.na(Plant_species_tree)) %>%
-    unnest(Plant_species_tree) %>%
-    mutate(
-      Plant_species = gsub("_"," ",Plant_species_tree),
-      PD_size = n
-    )
-  
-})
+
+PD_selected <- lapply(
+  c(10,5,3),
+  function(n){
+    
+    data_PD_tree %>%
+      group_by(Study_Network_id) %>%
+      summarise(
+        Plant_species_tree = list(
+          select_PD_species(
+            Plant_species_tree,
+            phylo_tree,
+            n
+          )
+        ),
+        .groups="drop"
+      ) %>%
+      filter(!is.na(Plant_species_tree)) %>%
+      unnest(Plant_species_tree) %>%
+      mutate(
+        Plant_species = gsub("_"," ",Plant_species_tree),
+        PD_size = n
+      )
+  }
+)
 
 
-names(PD_selected) <- c("PD_top10","PD_top5","PD_top3")
+names(PD_selected) <- c(
+  "PD_top10",
+  "PD_top5",
+  "PD_top3"
+)
 
-  
+
+
+#------------------------------------
+# 7. Calculate pollinator capture
+#------------------------------------
+
 calc_capture <- function(selected_data){
   
-  result <- left_join(
+  left_join(
     selected_data,
     data_interact,
     by=c(
       "Plant_species"="Plant_original_name",
       "Study_Network_id"
     )
-  )
-  
-  result %>%
+  ) %>%
     group_by(Study_Network_id) %>%
     summarise(
-      pollinator_count = n_distinct(
-        Pollinator_accepted_name[
-          Interaction_addup > 0 &
-            !is.na(Pollinator_accepted_name)
-        ]
-      ),
+      pollinator_count =
+        n_distinct(
+          Pollinator_accepted_name[
+            Interaction_addup > 0 &
+              !is.na(Pollinator_accepted_name)
+          ]
+        ),
       .groups="drop"
     ) %>%
     mutate(
-      pollinator_count = replace_na(pollinator_count,0)
+      pollinator_count =
+        replace_na(pollinator_count,0)
     )
 }
 
 
 
 PD_sp_number10 <- calc_capture(PD_selected$PD_top10)
-PD_sp_number5 <- calc_capture(PD_selected$PD_top5)
-PD_sp_number3 <- calc_capture(PD_selected$PD_top3)
+PD_sp_number5  <- calc_capture(PD_selected$PD_top5)
+PD_sp_number3  <- calc_capture(PD_selected$PD_top3)
 
 
-#检查分别选了多少种
-PD_selected$PD_top10 %>%
-  count(Study_Network_id) %>%
-  count(n)
 
-PD_selected$PD_top5 %>%
-  count(Study_Network_id) %>%
-  count(n)
+#------------------------------------
+# 8. Calculate percentage
+#------------------------------------
 
-PD_selected$PD_top3 %>%
-  count(Study_Network_id) %>%
-  count(n)
-
-
-#计算比例
 PD_percent10 <- PD_sp_number10 %>%
-  left_join(
-    total_number,
-    by="Study_Network_id"
-  ) %>%
+  left_join(total_number,
+            by="Study_Network_id") %>%
   mutate(
     percentage =
       pollinator_count /
-      total_pollinator_count *100
+      total_pollinator_count * 100
   )
 
 
 PD_percent5 <- PD_sp_number5 %>%
-  left_join(
-    total_number,
-    by="Study_Network_id"
-  ) %>%
+  left_join(total_number,
+            by="Study_Network_id") %>%
   mutate(
     percentage =
       pollinator_count /
-      total_pollinator_count *100
+      total_pollinator_count * 100
   )
 
 
 PD_percent3 <- PD_sp_number3 %>%
-  left_join(
-    total_number,
-    by="Study_Network_id"
-  ) %>%
+  left_join(total_number,
+            by="Study_Network_id") %>%
   mutate(
     percentage =
       pollinator_count /
-      total_pollinator_count *100
+      total_pollinator_count * 100
   )
 
-## save
+#------------------------------------
+# 9. Create full interaction datasets for network metrics
+#------------------------------------
+
+result_PD10 <- left_join(
+  PD_selected$PD_top10,
+  data_interact,
+  by=c(
+    "Plant_species"="Plant_original_name",
+    "Study_Network_id"
+  )
+)
+
+result_PD5 <- left_join(
+  PD_selected$PD_top5,
+  data_interact,
+  by=c(
+    "Plant_species"="Plant_original_name",
+    "Study_Network_id"
+  )
+)
+
+result_PD3 <- left_join(
+  PD_selected$PD_top3,
+  data_interact,
+  by=c(
+    "Plant_species"="Plant_original_name",
+    "Study_Network_id"
+  )
+)
 
 ######interaction coverage
 PD_cov10 <- unic_inter(
@@ -801,7 +852,7 @@ poll_sp_3 <- poll_sp_3_all %>%
   )
 
 head(poll_sp_10)
-head(res_10)
+
 merged_random10 <- merge(poll_sp_10,total_number,by.x = "Study_Network_id", by.y = "Study_Network_id", all = TRUE)
 merged_random5 <- merge(poll_sp_5,total_number,by.x = "Study_Network_id", by.y = "Study_Network_id", all = TRUE)
 merged_random3 <- merge(poll_sp_3,total_number,by.x = "Study_Network_id", by.y = "Study_Network_id", all = TRUE)
@@ -928,7 +979,7 @@ library(dplyr)
 library(purrr)
 
 # merge the results
-datasets <- list(
+percentage_datasets <- list(
   percent_5,
   percent_3,
   percent_10,
@@ -942,7 +993,7 @@ datasets <- list(
   random_3
 )
 head(random_10)
-names(datasets) <- c(
+names(percentage_datasets) <- c(
   "Abun5",
   "Abun3",
   "Abun10",
@@ -955,11 +1006,11 @@ names(datasets) <- c(
   "Random5",
   "Random3"
 )
-datasets <- lapply(datasets, function(df) {
+percentage_datasets <- lapply(percentage_datasets, function(df) {
   df %>%
     mutate(Study_Network_id = as.character(Study_Network_id))
 })
-datasets <- imap(datasets, function(df, nm) {
+percentage_datasets <- imap(percentage_datasets, function(df, nm) {
   
   df %>%
     rename_with(
@@ -973,12 +1024,27 @@ all_networks <- data.frame(
   Study_Network_id = as.character(unique(plant_pool$Study_Network_id))
 )
 
-result_all <- reduce(datasets, full_join, by = "Study_Network_id") %>%
+result_all <- reduce(percentage_datasets, full_join, by = "Study_Network_id") %>%
   right_join(all_networks, by = "Study_Network_id")
 head(result_all)
 n_distinct(result_all$Study_Network_id)
 
+subsampled_networks<-list(
+  orig = result_orig,
+  Abun10 = result10,
+  Abun5 = result5,
+  Abun3 = result3,
+  FlwShape5 = abun_species_top5_merge,
+  FlwShape3 = abun_species_top3_merge,
+  Pylo10 = result_PD10,
+  Pylo5 = result_PD5,
+  Pylo3 = result_PD3
+)
+  
+  
 write.csv(result_all,"data/processed/result_all_published_PD.csv", row.names = TRUE)   
+saveRDS(percentage_datasets,"data/processed/MainResults_richness.rds")
+saveRDS(subsampled_networks,"data/processed/Subsampled_networks.rds")
 
 
 ############ unique coverage result merge

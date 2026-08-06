@@ -5,38 +5,13 @@ getwd()
 setwd("E:/Chap1_TargetPlant_to_monitor")
 ####################################################
 # data prepare
-data_count_scaled<-readRDS("data_count_scaled_published_0526.rds")#全部互作数据
-data_interact<-readRDS("data_interact_published_0526.rds")
-
-data_interact<-data_interact%>%
-  mutate(
-    Plant_accepted_name = str_replace_all(Plant_accepted_name, "×", "") %>%  # 去掉 ×
-      str_squish()  # 去掉多余空格
-  )
-
-data_count_scaled_species <- data_count_scaled %>%
-  filter(!is.na(Plant_species)) %>%       # 排除 NA
-  filter(str_detect(Plant_species, " "))  # 保留含空格的名字（双名）
-
-
-data_merge<- merge(data_interact, data_count_scaled[,c("Flower_data_merger","Flower_count_scaled","Plant_species","Study_Network_id")], 
-                   by = "Flower_data_merger",all = TRUE)%>%
-  filter(!is.na(Flower_data_merger))%>%
-  mutate(
-    Study_Network_id = coalesce(Study_Network_id.x, Study_Network_id.y)
-  ) %>%
-  dplyr::select(-Study_Network_id.x, -Study_Network_id.y)%>%
-  mutate(Interaction_addup = ifelse(is.na(Interaction_addup), 0, Interaction_addup))%>% # 替换 `Interaction_addup` 为 NA 的值为 0
-  mutate(
-    Plant_accepted_name = str_squish(str_replace_all(replace_na(Plant_accepted_name, ""), "×", ""))
-  ) 
-
+data_count_scaled<-readRDS("data/raw/data_count_scaled_published.rds")#全部互作数据
+data_interact<-readRDS("data/raw/data_interact_published.rds")
+data_merge<- readRDS("data/processed/data_merge")
 
 unique(data_interact$Study_Network_id)
 unique(data_count_scaled_species$Study_Network_id)
 unique(data_merge$Study_Network_id)
-
-percent_10<-read.csv("percent_10.csv")
 
 
 ###===============================================================================
@@ -47,7 +22,7 @@ percent_10<-read.csv("percent_10.csv")
 library(stringr)
 library(tidyr)
 library(dplyr)
-result10<-readRDS("result10.rds")
+result10<-readRDS("/data/processed/selected_plant_result_abun10.rds")
 ####################### order level
 order_pollinator_10 <- result10 %>%
   ungroup() %>%
