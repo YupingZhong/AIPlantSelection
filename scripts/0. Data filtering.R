@@ -11,6 +11,7 @@
 # - data/raw/Flower_counts_published.rds
 # - data/raw/test.merge.trait.csv
 # - data/raw/species_checked_wof.csv
+# - data/raw/plant_sampling_unit.csv
 
 # ==========================================================
 # Load libraries
@@ -23,23 +24,34 @@ library(lubridate)
 library(stringr)
 library(ggplot2)
 library(cowplot)  
+library(flextable)
+library(officer)
 
 # ==========================================================
-# Load raw data
+# Load data
 # ==========================================================
 
-metadata<-readRDS("data/raw/Interaction_data_published.rds")%>%
+metadata <- readRDS("data/raw/Interaction_data_published.rds") %>%
   mutate(Study_Network_id = paste(Study_id, Network_id, sep = "_")) #The EuPPollNet interaction data
 
-length(unique(metadata$Study_Network_id))  # 1630
+meta_count <- readRDS("data/raw/Flower_counts_published.rds") #The EuPPollNet flower data
 
-meta_count<-readRDS("data/raw/Flower_counts_published.rds")#The EuPPollNet flower data
-colnames(metadata)
+species_correct <- read.csv("species_checked_wof.csv") %>%
+  select(WOF_name,original_name)%>%
+  mutate(Plant_species = original_name)
 
-test<-meta_count%>%filter(Study_id == "20_Hoiss")
-sum(metadata$Interaction) #623476
-nrow(metadata) #623476
-########
+traits <- read.csv("test.merge.trait.csv", header = TRUE, fileEncoding = "UTF-8")
+
+plant_unit <- read.csv("plant_sampling_unit.csv") %>%
+  select("Study_id","Flower.sampling.methods")%>%
+  filter (Study_id %in% final_study_id)
+setdiff(final_study_id, plant_unit$`Study ID`)
+names(plant_unit) <- c("Study ID", "Flower sampling methods")
+
+# ==========================================================
+# Clean plant names
+# ==========================================================
+
 # Typo revision
 meta_count <- meta_count %>%
   mutate(
@@ -70,29 +82,21 @@ meta_count <- meta_count %>%
       Plant_species == "Linum nervosum.perenne"  ~ "Linum nervosum",
       Plant_species == "Bituminaria bituminosa (L.) C.H.Stirt." ~ "Bituminaria bituminosa",
       Plant_species == "Vaccinium vitis_idaea" ~ "Vaccinium vitis-idaea",
-      TRUE ~ Plant_species  # 其他行保持原样
-    )
-  )%>%
+      TRUE ~ Plant_species))  %>% # 其他行保持原样
   # 创建新列只保留属名 + 种加词
   mutate(
     n_words = str_count(Plant_species, "\\S+"),  # 计算词数
     Plant_species = if_else(
       n_words >= 2,
       str_c(word(Plant_species, 1), word(Plant_species, 2), sep = " "),  # 前两个词
-      Plant_species  # 只有一个词则保留
-    )
-  ) %>%
+      Plant_species)) %>% # 只有一个词则保留
   select(-n_words)  %>%
   mutate(
     Plant_species = str_remove(Plant_species, "/$"),
     Plant_species = str_squish(Plant_species)  # 去掉尾部多余空格
   )
 #########################################
-
 #1.1 unify plant name and merge the interaction data and flower data
-species_correct<-read.csv("species_checked_wof.csv")%>%
-  select(WOF_name,original_name)%>%
-  mutate(Plant_species = original_name)
 
 meta_count <- meta_count %>%
   left_join(species_correct %>% select(Plant_species, WOF_name), by = "Plant_species") %>%
@@ -105,14 +109,11 @@ meta_count <- meta_count %>%
 
 year_flag <- meta_count %>%
   mutate(
-    Study_Network_id_noyear = paste(Study_id, Network_id, sep = "_")
-  ) %>%
+    Study_Network_id_noyear = paste(Study_id, Network_id, sep = "_")) %>%
   group_by(Study_Network_id_noyear) %>%
   summarise(
     has_year = any(!is.na(Year)),
-    .groups = "drop"
-  )
-
+    .groups = "drop")
 
 metadata <- metadata %>%
   mutate(
@@ -122,16 +123,12 @@ metadata <- metadata %>%
   left_join(year_flag, by = "Study_Network_id_noyear") %>%
   mutate(
     Study_Network_id = case_when(
-      
       # ❗ 两边都有 year → 用 site-year
       has_year & !is.na(Year) ~
         paste(Study_id, Network_id, Year, sep = "_"),
-      
       # ❗ flower data 没 year → 强制降级
       TRUE ~
-        Study_Network_id_noyear
-    )
-  )
+        Study_Network_id_noyear))
 
 meta_count <- meta_count %>%
   mutate(
@@ -141,17 +138,11 @@ meta_count <- meta_count %>%
   mutate(
     Study_Network_id = case_when(
       has_year ~ paste(Study_id, Network_id, Year, sep = "_"),
-      TRUE ~ Study_Network_id_noyear
-    )
-  ) %>%
+      TRUE ~ Study_Network_id_noyear)) %>%
   filter(!is.na(Flower_count))
 
-
-#check the record
-unique(metadata$Study_id)#54
-unique(metadata$Study_Network_id)#1740
-unique(meta_count$Study_Network_id)#1740
-b<-meta_count%>%
+#check records
+b <- meta_count%>%
   filter(!is.na(Flower_count))%>%
   distinct(Study_Network_id)
 study_network_ids<-b$Study_Network_id
@@ -160,11 +151,9 @@ study_network_ids<-b$Study_Network_id
 #select all the sites with plant data
 data_interact <- metadata[metadata$Study_Network_id %in% study_network_ids, ] #data_interact是筛选出的，含有plant_data的networks
 
-data_count <- meta_count%>%
-  filter(Flower_count!=0)%>%
+data_count <- meta_count %>%
+  filter(Flower_count!=0) %>%
   filter(!is.na(Flower_count))
-
-unique(data_count$Study_Network_id)
 
 study_network_id_count <- unique(data_count$Study_Network_id)
 study_network_id_interact <- unique(data_interact$Study_Network_id)
@@ -172,13 +161,6 @@ study_network_id_interact <- unique(data_interact$Study_Network_id)
 # Match two datasets
 count_not_in_interact <- setdiff(study_network_id_count, study_network_id_interact)
 interact_not_in_count <- setdiff(study_network_id_interact, study_network_id_count)
-
-count_not_in_interact #20
-interact_not_in_count #0
-
-unique(metadata$Study_Network_id)
-unique(meta_count$Study_Network_id)
-
 
 # sampling_check_site <- meta_count %>%
 #   distinct(Study_Network_id, Year, Month) %>%
@@ -246,85 +228,62 @@ unique(meta_count$Study_Network_id)
 # 
 # test<-metadata%>%filter(Study_Network_id == "22_Kallnik_h1")
 
-
 #data filtering and scaling 
 #calculate average plant abundance for each plant species in the plant survey data. 
-data_count_scaled <- meta_count%>%
+data_count_scaled <- meta_count %>%
   #filter(!Study_Network_id%in%count_not_in_interact) %>%
   group_by(Plant_species,Study_Network_id, Year, Month, Day) %>%
   mutate(Flower_count = sum(Flower_count, na.rm = TRUE)) %>%
   ungroup() %>%
   group_by(Plant_species, Study_Network_id) %>% # Year seperate
   filter (!Flower_count == 0) %>%
-  mutate(Flower_count_scaled = mean(Flower_count, na.rm = TRUE))%>%
+  mutate(Flower_count_scaled = mean(Flower_count, na.rm = TRUE)) %>%
   distinct(Flower_count_scaled, Plant_species, Study_Network_id, .keep_all = TRUE)%>%
   group_by(Flower_data_merger) %>%
   filter(n() == 1) %>%
   ungroup()
 
-
-length(unique(data_count_scaled$Study_Network_id))#1055
-unique(data_interact$Study_id)#36
-
-
 #Removed networks with no separate plant survey. 
-data_count_scaled<-data_count_scaled%>%
-  filter(!Study_Network_id%in%count_not_in_interact)
-length(unique(data_count_scaled$Study_Network_id))#1035
-unique(data_interact$Study_id)#36
-
-length(unique(data_count_scaled$Study_Network_id))#36
-
-test<-data_count_scaled%>%filter(Study_id == "20_Hoiss")
-#Now we are left with 36 studies with 1035 networks.
-
-
-##########################################
-
-#=========================screening==============================================
+data_count_scaled<-data_count_scaled %>%
+  filter(!Study_Network_id %in% count_not_in_interact)
+# ==========================================================
+# Filter networks
+# ==========================================================
 #######
 # 检查剩余网络数
 length(unique(data_count_scaled$Study_Network_id))# 1035
 
-# remove all wind flowers from interaction data
-traits<-read.csv("test.merge.trait.csv", header = TRUE, fileEncoding = "UTF-8")
-# 
-data_interact_trait<-left_join(data_interact, traits, by = "Plant_accepted_name")
-data_count_scaled_trait<-left_join(data_count_scaled, traits, by = c("Plant_species" = "Plant_accepted_name"))
+data_interact_trait <- left_join(data_interact, traits, by = "Plant_accepted_name")
+data_count_scaled_trait <- left_join(data_count_scaled, traits, by = c("Plant_species" = "Plant_accepted_name"))
 
-data_interact<-data_interact_trait%>%
+data_interact <- data_interact_trait%>%
   filter(!flw_shape_revised == "wind flowers")
-  # group_by(Plant_accepted_name,Study_Network_id, Pollinator_accepted_name)%>%
-  # mutate(Interaction_addup=sum(Interaction))%>%
-  # ungroup()%>%
-  # distinct(Interaction_addup, Plant_accepted_name,Study_Network_id, Pollinator_accepted_name, .keep_all = TRUE)
 
-data_count_scaled<-data_count_scaled_trait%>%
+data_count_scaled <- data_count_scaled_trait%>%
   filter(!flw_shape_revised == "wind flowers")
 
 length(unique(data_interact$Study_Network_id))
 length(unique(data_count_scaled$Study_Network_id))# 1035
 length(unique(data_count_scaled$Study_id))# 36
 
-
 #1.2 checked if:
-#•	less than 75% plant names in the interaction data are not in the plant list.  
-#•	Plant species involved in the most interactions in the network are not in the plant list.
-###(1)•	Remove -more than 25% plant names in the interaction data are not in the plant list
+#less than 75% plant names in the interaction data are not in the plant list.  
+#Plant species involved in the most interactions in the network are not in the plant list.
+###(1) Remove -more than 25% plant names in the interaction data are not in the plant list
 ##To check how many records doesn't merge
-colnames(data_interact)
-colnames(data_count_scaled)
-length(unique(data_count_scaled$Study_Network_id))# 1030
+plant_inter <- data_interact %>% 
+  select(Study_Network_id,Plant_original_name) %>%
+  distinct()
 
-plant_inter<-data_interact%>%select(Study_Network_id,Plant_original_name)%>%distinct()
-plant_flower<-data_count_scaled%>%select(Study_Network_id,Plant_species)%>%distinct()
+plant_flower <- data_count_scaled %>% 
+  select(Study_Network_id,Plant_species) %>% 
+  distinct()
 
 # 清理 plant_inter
 plant_inter <- plant_inter %>%
   mutate(
     Plant_original_name = str_trim(Plant_original_name), # 去掉前后空格
-    Plant_original_name = str_to_lower(Plant_original_name) # 全小写
-  )
+    Plant_original_name = str_to_lower(Plant_original_name)) # 全小写
 
 # 清理 plant_flower
 plant_flower <- data_count_scaled %>%
@@ -333,8 +292,7 @@ plant_flower <- data_count_scaled %>%
   na.omit() %>%
   mutate(
     Plant_species = str_trim(Plant_species),
-    Plant_species = str_to_lower(Plant_species)
-  )
+    Plant_species = str_to_lower(Plant_species))
 
 # 再 join
 plant_merge <- plant_inter %>%
@@ -347,8 +305,7 @@ NA1_proportion <- plant_merge %>%
   summarise(
     total_plants = n(),
     missing_plants = sum(is.na(Flower_count)),
-    proportion_missing = missing_plants / total_plants
-  )
+    proportion_missing = missing_plants / total_plants)
 
 # 筛掉 >25% 缺失的网络
 dropNetwork <- NA1_proportion %>%
@@ -364,14 +321,8 @@ data_interact <- data_interact %>%
 data_count_scaled <- data_count_scaled %>%
   filter(!Study_Network_id %in% dropNetwork)
 
-
-# 检查剩余网络数
-length(unique(data_count_scaled$Study_Network_id))#583
-length(unique(data_count_scaled$Study_id))#31
-length(unique(data_interact$Study_Network_id))#581
-
 #1.3  looked for studies that contain few interactions overall (data poor studies).  
-###(1)•	remove <30 interactions
+###(1)	remove <30 interactions
 
 plant_visit <- data_interact %>%
   group_by(Study_Network_id) %>%
@@ -382,31 +333,22 @@ plant_visit <- data_interact %>%
 main_data <- plant_visit %>% filter(plant_visit_time <= 500)
 tail_data <- plant_visit %>% filter(plant_visit_time > 500)
 
-
 # 主图
 p_main <- ggplot(main_data, aes(x = plant_visit_time, fill = flag)) +
   geom_histogram(binwidth = 10, color = "black") +
-  
   scale_fill_manual(values = c(
     "TRUE" = "orange",
-    "FALSE" = "#66C2A5"
-  )) +
-  
+    "FALSE" = "#66C2A5")) +
   labs(
     x = "Total interactions per network (≤500)",
     y = "Number of networks",
     fill = "Low interaction (≤30)"
   ) +
-  
-  theme_classic() +   # ✅ 先放主题
-  
+  theme_classic() +   #先放主题
   theme(
-    legend.position = "bottom"
-  ) +
-  
+    legend.position = "bottom") +
   guides(
-    fill = guide_legend(override.aes = list(size = 5))
-  )
+    fill = guide_legend(override.aes = list(size = 5)))
 
 # inset 小图
 p_tail <- ggplot(tail_data, aes(x = plant_visit_time)) +
@@ -419,12 +361,9 @@ histogram_1 <- ggdraw() +
   draw_plot(p_main) +
   draw_plot(p_tail, x = 0.55, y = 0.5, width = 0.4, height = 0.4)
 
-
-
 print(histogram_1)#750*350
 
 ggsave("/Chap1_TargetPlant_to_monitor/result_260526/hist1.png", histogram_1, width = 7.5, height = 3.5, units = "in", dpi = 300)
-
 
 ## filtering
 data_interact<-data_interact%>%
@@ -435,12 +374,6 @@ data_interact<-data_interact%>%
 data_count_scaled<-data_count_scaled%>%
   left_join(plant_visit,by="Study_Network_id")%>%
   filter(plant_visit_time>=30)
-
-length(unique(data_interact$Study_Network_id))#left with 459
-unique(data_interact$Study_id)#  studies 31
-
-#drop 124 Networks (<30 interactions)
-#left with  459 Networks
 
 ###(2)Removed studies with fewer than 10 plant species and fewer than 10 pollinator species.
 
@@ -458,48 +391,32 @@ nrow(plant_diversity)# 542 461
 
 saveRDS(plant_diversity,"plant_diversity_461networks.rds")
 
-
 breaks_2 <- seq(0, max(plant_diversity$plant_sp_number), by = 10)
 unique(plant_diversity$Study_Network_id)#left with 350 Networks
 
 histogram_2 <- ggplot(
   plant_diversity,
-  aes(x = plant_sp_number, fill = flag)
-) +
-  
+  aes(x = plant_sp_number, fill = flag)) +
   geom_histogram(
     binwidth = 2,
-    color = "black"
-  ) +
-  
+    color = "black") +
   scale_fill_manual(
     values = c(
       "TRUE" = "orange",
-      "FALSE" = "#66C2A5"
-    )
-  ) +
-  
+      "FALSE" = "#66C2A5")) +
   guides(
-    fill = guide_legend(override.aes = list(size = 5))
-  ) +
-  
+    fill = guide_legend(override.aes = list(size = 5))) +
   labs(
     x = "Number of plant species",
     y = "Number of networks",
-    fill = "Low richness (≤10)"
-  ) +
-  
-  theme_classic() +   # ✅ 和 p_main 一致
-  
+    fill = "Low richness (≤10)") +
+  theme_classic() +   #和 p_main 一致
   theme(
-    legend.position = "bottom"   # ✅ 一致
-  )
-
+    legend.position = "bottom")   #一致
 
 print(histogram_2)#750*350
 
 ggsave("/Chap1_TargetPlant_to_monitor/result_260526/hist2.png", histogram_2, width = 7.5, height = 3.5, units = "in", dpi = 300)
-
 
 few_sp <- data_interact %>%
   filter(!is.na(Plant_accepted_name)) %>%       # 排除 NA
@@ -518,24 +435,18 @@ data_count_scaled <-data_count_scaled%>%
   filter(!is.na(Plant_species)& Flower_count != 0) %>%       # 排除 NA
   filter(str_detect(Plant_species, " "))  # 保留含空格的名字（双名）, 去掉所有只鉴定到属的记录
 
-
 # select_network<-unique(data_interact$Study_Network_id)
 length(unique(data_interact$Study_id))
 unique(data_interact$Study_Network_id)#332个网络 270，30个研究 27
 
 length(unique(data_count_scaled$Plant_species))# 1396 1029
 
-
 ###(2)Removed studies with fewer than 10 plant species in plant survey data.
 few_sp_in_plant_survey <- data_count_scaled %>%
   group_by(Study_Network_id) %>%
   summarize(
-    plant_sp_number = n_distinct(Plant_species, na.rm = TRUE)
-  ) %>%
+    plant_sp_number = n_distinct(Plant_species, na.rm = TRUE)) %>%
   filter(plant_sp_number<10)
-
-few_sp_in_plant_survey ## 4 record
-
 
 data_interact <-data_interact%>%
   filter(!Study_Network_id%in%few_sp_in_plant_survey$Study_Network_id)
@@ -544,53 +455,29 @@ data_count_scaled <-data_count_scaled%>%
   filter(!is.na(Plant_species)& Flower_count != 0) %>%       # 排除 NA
   filter(str_detect(Plant_species, " "))  # 保留含空格的名字（双名）, 去掉所有只鉴定到属的记录
 
-
-# select_network<-unique(data_interact$Study_Network_id)
-unique(data_interact$Study_id)
-unique(data_interact$Study_Network_id)
-
-unique(data_count_scaled$Plant_species)
-
 #### summarize
-select_network<-unique(data_interact$Study_Network_id)
-unique(data_interact$Study_id)
-unique(data_interact$Study_Network_id)#最终选择328个网络，30个研究
-unique(data_count_scaled$Study_Network_id)
-unique(data_count_scaled$Plant_species)# 1396
-unique(data_interact$Plant_accepted_name)# 1028
+select_network <- unique(data_interact$Study_Network_id)
 
-data_interact<-data_interact%>%
+data_interact <- data_interact %>%
   group_by(Plant_accepted_name,Study_Network_id, Pollinator_accepted_name)%>%
-  mutate(Interaction_addup=sum(Interaction))%>%
-  ungroup()%>%
+  mutate(Interaction_addup = sum(Interaction)) %>%
+  ungroup() %>%
   distinct(Interaction_addup, Plant_accepted_name,Study_Network_id, Pollinator_accepted_name, .keep_all = TRUE)
 
-final_study_id<-unique(data_interact$Study_id)
+final_study_id <- unique(data_interact$Study_id)
 
-##################################
+## ==========================================================
+# Create table of plant sampling methods
+# ==========================================================
 
-#-----------Check plant sampling methods
-
-###################################
-
-colnames(data_count_scaled)
-Plant_method<-data_count_scaled%>%
+Plant_method <- data_count_scaled %>%
   select("Study_id","Network_id",  "Units","Comments" )%>%
   distinct()
 
 uniq<-Plant_method%>%
-  select("Study_id","Units" )%>%
+  select("Study_id","Units" ) %>%
   distinct()
 unique(uniq$Study_id)
-
-library(flextable)
-library(officer)
-
-plant_unit <- read.csv("plant_sampling_unit.csv") %>%
-  select("Study_id","Flower.sampling.methods")%>%
-  filter (Study_id %in% final_study_id)
-setdiff(final_study_id, plant_unit$`Study ID`)
-names(plant_unit) <- c("Study ID", "Flower sampling methods")
 
 ft <- flextable(plant_unit) %>%
   theme_booktabs() %>%                     # 三线表
@@ -611,6 +498,9 @@ doc <- read_docx() %>%
 
 print(doc, target = "./result_260526/plant_sampling_unit.docx")
 
-#save
+## ==========================================================
+# Save processed datasets
+# ==========================================================
+
  saveRDS(data_count_scaled,"data_count_scaled_published_0526.rds")
  saveRDS(data_interact,"data_interact_published_0526.rds")
