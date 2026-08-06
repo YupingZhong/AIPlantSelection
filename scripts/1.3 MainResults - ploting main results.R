@@ -444,11 +444,11 @@ ggsave("/Chap1_TargetPlant_to_monitor/result_260723/main.png", plot, width = 7, 
 ggsave("/Chap1_TargetPlant_to_monitor/result_260526/main_unique_interaction.png", plot, width = 7, height = 5, units = "in", dpi = 300)
 
 
-#############
+############################################
 #---z-score---
-#############
+######################################
 
-z_results<-readRDS("z_results.rds")
+z_results<-readRDS("data/processed/z_results.rds")
 sample_size <- z_results %>%
   filter(!is.na(Z_score)) %>%
   group_by(

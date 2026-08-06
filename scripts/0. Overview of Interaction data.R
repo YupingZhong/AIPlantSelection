@@ -13,8 +13,8 @@ library(stringr)
 
 ##################plant and pollinator species distribution
 # read data
-data_count_scaled<-readRDS("data/processed/data_count_scaled_published_0526.rds")#全部互作数据
-data_interact<-readRDS("data/processed/data_interact_published_0526.rds")
+data_count_scaled<-readRDS("data/processed/data_count_scaled_published.rds")#全部互作数据
+data_interact<-readRDS("data/processed/data_interact_published.rds")
 
 n_distinct(data_interact$Study_id)
 
