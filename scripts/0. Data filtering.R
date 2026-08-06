@@ -10,6 +10,8 @@ library(tidyr)
 library(lubridate)
 library(stringr)
 library(ggplot2)
+library(cowplot)  
+
 #read data
 metadata<-readRDS("data/raw/Interaction_data_published.rds")%>%
   mutate(Study_Network_id = paste(Study_id, Network_id, sep = "_")) #The EuPPollNet interaction data
@@ -24,9 +26,6 @@ sum(metadata$Interaction) #623476
 nrow(metadata) #623476
 ########
 # Typo revision
-library(dplyr)
-library(stringr)
-
 meta_count <- meta_count %>%
   mutate(
     # 去掉末尾的 sp./Sp./SP./1/?/spec.
@@ -301,8 +300,7 @@ length(unique(data_count_scaled$Study_id))# 36
 colnames(data_interact)
 colnames(data_count_scaled)
 length(unique(data_count_scaled$Study_Network_id))# 1030
-library(dplyr)
-library(stringr)
+
 plant_inter<-data_interact%>%select(Study_Network_id,Plant_original_name)%>%distinct()
 plant_flower<-data_count_scaled%>%select(Study_Network_id,Plant_species)%>%distinct()
 
@@ -359,9 +357,6 @@ length(unique(data_interact$Study_Network_id))#581
 
 #1.3  looked for studies that contain few interactions overall (data poor studies).  
 ###(1)•	remove <30 interactions
-library(ggplot2)
-library(dplyr)
-library(cowplot)  
 
 plant_visit <- data_interact %>%
   group_by(Study_Network_id) %>%
@@ -573,7 +568,6 @@ uniq<-Plant_method%>%
   distinct()
 unique(uniq$Study_id)
 
-library(dplyr)
 library(flextable)
 library(officer)
 
