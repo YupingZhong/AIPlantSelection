@@ -40,13 +40,10 @@ species_correct <- read.csv("data/raw/species_checked_wof.csv") %>%
   select(WOF_name,original_name)%>%
   mutate(Plant_species = original_name)
 
-traits <- read.csv("data/processesd/merge.trait.csv", header = TRUE, fileEncoding = "UTF-8")
+traits <- read.csv("data/processed/merge.trait.csv", header = TRUE, fileEncoding = "UTF-8")
 
 plant_unit <- read.csv("data/raw/plant_sampling_unit.csv") %>%
-  select("Study_id","Flower.sampling.methods")%>%
-  filter (Study_id %in% final_study_id)
-setdiff(final_study_id, plant_unit$`Study ID`)
-names(plant_unit) <- c("Study ID", "Flower sampling methods")
+  select("Study_id","Flower.sampling.methods")
 
 # ==========================================================
 # Clean plant names
@@ -162,72 +159,6 @@ study_network_id_interact <- unique(data_interact$Study_Network_id)
 count_not_in_interact <- setdiff(study_network_id_count, study_network_id_interact)
 interact_not_in_count <- setdiff(study_network_id_interact, study_network_id_count)
 
-# sampling_check_site <- meta_count %>%
-#   distinct(Study_Network_id, Year, Month) %>%
-#   count(Study_Network_id, Year, name = "n_months_sampled") %>%
-#   filter(n_months_sampled > 1) %>%
-#   arrange(desc(n_months_sampled))
-# 
-# sampling_check_site
-# 
-# multi_month_detail <- meta_count %>%
-#   distinct(Study_Network_id, Year, Month) %>%
-#   group_by(Study_Network_id, Year) %>%
-#   summarise(
-#     months = paste(sort(unique(Month)), collapse = ", "),
-#     n_months = n(),
-#     .groups = "drop"
-#   ) %>%
-#   filter(n_months > 1) %>%
-#   arrange(desc(n_months))
-# 
-# multi_month_detail
-# 
-# year_detail <- meta_count %>%
-#   distinct(Study_Network_id, Year) %>%
-#   group_by(Study_Network_id) %>%
-#   summarise(
-#     years = paste(sort(unique(Year)), collapse = ", "),
-#     n_years = n(),
-#     .groups = "drop"
-#   ) %>%
-#   arrange(desc(n_years))
-# 
-# year_detail
-# 
-# 
-# year_detail_in <- metadata %>%
-#   select(Study_Network_id, Year) %>%
-#   distinct() %>%
-#   group_by(Study_Network_id) %>%
-#   summarise(
-#     years = paste(sort(unique(Year)), collapse = ", "),
-#     n_years = n_distinct(Year),
-#     .groups = "drop"
-#   ) %>%
-#   arrange(desc(n_years))
-# 
-# 
-# year_detail_in
-# # 
-# colnames(metadata)
-# colnames(meta_count)
-# multi_month_detail_in <- metadata %>%
-#   distinct(Study_Network_id, Year, Date) %>%
-#   group_by(Study_Network_id, Year) %>%
-#   summarise(
-#     months = paste(sort(unique(Date)), collapse = ", "),
-#     n_months = n(),
-#     .groups = "drop"
-#   ) %>%
-#   filter(n_months > 1) %>%
-#   arrange(desc(n_months))
-# 
-# multi_month_detail_in
-# 
-# 
-# test<-metadata%>%filter(Study_Network_id == "22_Kallnik_h1")
-
 #data filtering and scaling 
 #calculate average plant abundance for each plant species in the plant survey data. 
 data_count_scaled <- meta_count %>%
@@ -244,7 +175,7 @@ data_count_scaled <- meta_count %>%
   ungroup()
 
 #Removed networks with no separate plant survey. 
-data_count_scaled<-data_count_scaled %>%
+data_count_scaled <- data_count_scaled %>%
   filter(!Study_Network_id %in% count_not_in_interact)
 # ==========================================================
 # Filter networks
@@ -363,7 +294,7 @@ histogram_1 <- ggdraw() +
 
 print(histogram_1)#750*350
 
-ggsave("/Chap1_TargetPlant_to_monitor/result_260526/hist1.png", histogram_1, width = 7.5, height = 3.5, units = "in", dpi = 300)
+#ggsave("/Chap1_TargetPlant_to_monitor/result_260526/hist1.png", histogram_1, width = 7.5, height = 3.5, units = "in", dpi = 300)
 
 ## filtering
 data_interact<-data_interact%>%
@@ -389,7 +320,7 @@ plant_diversity<-data_count_scaled_species%>%
   mutate(flag = plant_sp_number <= 10)
 nrow(plant_diversity)# 542 461
 
-saveRDS(plant_diversity,"plant_diversity_461networks.rds")
+#saveRDS(plant_diversity,"plant_diversity_461networks.rds")
 
 breaks_2 <- seq(0, max(plant_diversity$plant_sp_number), by = 10)
 unique(plant_diversity$Study_Network_id)#left with 350 Networks
@@ -416,7 +347,7 @@ histogram_2 <- ggplot(
 
 print(histogram_2)#750*350
 
-ggsave("/Chap1_TargetPlant_to_monitor/result_260526/hist2.png", histogram_2, width = 7.5, height = 3.5, units = "in", dpi = 300)
+#ggsave("/Chap1_TargetPlant_to_monitor/result_260526/hist2.png", histogram_2, width = 7.5, height = 3.5, units = "in", dpi = 300)
 
 few_sp <- data_interact %>%
   filter(!is.na(Plant_accepted_name)) %>%       # 排除 NA
@@ -478,6 +409,11 @@ uniq<-Plant_method%>%
   select("Study_id","Units" ) %>%
   distinct()
 unique(uniq$Study_id)
+
+plant_unit = plant_unit %>%
+  filter (Study_id %in% final_study_id)
+names(plant_unit) <- c("Study ID", "Flower sampling methods")
+
 
 ft <- flextable(plant_unit) %>%
   theme_booktabs() %>%                     # 三线表
