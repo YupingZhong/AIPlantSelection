@@ -1,31 +1,29 @@
+############################################################
+# Optimising plant species selection for automated monitoring
+# Main results
+############################################################
 
-#############################################################################
+# ==========================================================
+# Load libraries
+# ==========================================================
 
-#--------------------MAIN RESULTS------------------------------------------
-
-########################################################################
-
-##====================================================
-
-## --------1.Data overview--------------------
-
-##====================================================
-setwd("/Chap1_TargetPlant_to_monitorD/Project_PlantSelection")
 library(dplyr)
-library(ggplot2) 
-library(giscoR) 
-library(patchwork)
-library(ggstar) 
-library(scales)
 library(tidyr)
-library(viridis)
 library(stringr)
+library(ggplot2)
+library(giscoR)
+library(patchwork)
+library(ggstar)
+library(scales)
+library(viridis)
 library(vegan)
 
+# ==========================================================
+# Load data
+# ==========================================================
 
-##################plant and pollinator species distribution
-data_count_scaled<-readRDS("data/processed/data_count_scaled_published.rds")
-data_interact<-readRDS("data/processed/data_interact_published.rds")
+data_count_scaled <- readRDS("data/processed/data_count_scaled_published.rds")
+data_interact <- readRDS("data/processed/data_interact_published.rds")
 unique(data_count_scaled$Study_Network_id)
 colnames(data_count_scaled)
 
@@ -50,12 +48,10 @@ data_interact %>%
 length(unique(data_interact$Study_Network_id) )
 length(unique(data_count_scaled$Study_Network_id) )
 
-traits<-read.csv("data/processed/merge.trait.csv", header = TRUE, fileEncoding = "UTF-8")
-
-
+traits <- read.csv("data/processed/merge.trait.csv", header = TRUE, fileEncoding = "UTF-8")
 
 # include plant with 0 visit into analysis
-data_merge<- merge(data_interact, data_count_scaled[,c("Flower_data_merger","Flower_count_scaled","Plant_species","Study_Network_id")], 
+data_merge <- merge(data_interact, data_count_scaled[,c("Flower_data_merger","Flower_count_scaled","Plant_species","Study_Network_id")], 
                    by = "Flower_data_merger",all = TRUE)%>%
   filter(!is.na(Flower_data_merger))%>%
   mutate(
@@ -67,7 +63,7 @@ data_merge<- merge(data_interact, data_count_scaled[,c("Flower_data_merger","Flo
     Plant_accepted_name = str_squish(str_replace_all(replace_na(Plant_accepted_name, ""), "×", ""))
   ) 
 
-
+# Checks
 nrow(data_count_scaled)
 nrow(data_interact)
 nrow(data_merge)
@@ -75,7 +71,7 @@ nrow(data_merge)
 data_count_scaled%>%filter(Flower_count_scaled == 0 )
 unique(na.omit(data_merge$flw_shape_revised))
 
-#flowershape check
+# flower shape check
 shape_count <- data_count_scaled %>%
   group_by(Study_Network_id) %>%
   summarise(
@@ -83,7 +79,7 @@ shape_count <- data_count_scaled %>%
     .groups = "drop"
   )
 
-# 分别统计达到不同阈值的网络数
+# Check how many networks contain 10, 5, and 3 flower shapes
 shape_count %>%
   summarise(
     n_networks = n(),
@@ -95,18 +91,11 @@ shape_count %>%
     prop_ge5 = mean(n_shape >= 5),
     
     n_ge3 = sum(n_shape >= 3),
-    prop_ge3 = mean(n_shape >= 3)
-  )
+    prop_ge3 = mean(n_shape >= 3))
 
-
-##====================================================
-
-## ---2. Percentage of Pollinator Captured under Subsampling Strategies-----------------
-
-##====================================================
-library(dplyr)
-library(stringr)
-
+#====================================================
+# Percentage of Pollinator Captured under Subsampling Strategies
+#====================================================
 ### Plant identified to only genus level were excluded before we select the most abundant plant species.
 ### 在筛选前十时，必须先摆脱genus, 这一步在筛选的时候已经做了，将plant data都只保留属（interaction的没动）
 
@@ -167,7 +156,7 @@ result10 <-
   group_by(Study_Network_id) %>%
   ungroup()
 
-saveRDS(result10,"data/processed/selected_plant_result_abun10.rds")
+#saveRDS(result10,"data/processed/selected_plant_result_abun10.rds")
 
 sp_number10 <- result10 %>%
   ungroup%>%
@@ -176,7 +165,7 @@ sp_number10 <- result10 %>%
   summarise(pollinator_count = n_distinct(Pollinator_accepted_name,na.rm = TRUE))
 
 
-total_number<-data_interact %>%
+total_number <- data_interact %>%
   ungroup%>%
   group_by(Study_Network_id) %>%
   filter(!Interaction_addup == 0)%>%
@@ -194,6 +183,7 @@ result5 <-
   filter(!Interaction_addup == 0)%>%
   group_by(Study_Network_id) %>%
   ungroup()
+
 sp_number5 <- result5 %>%
   group_by(Study_Network_id, Pollinator_accepted_name) %>%
   summarise(freq = sum(Interaction_addup, na.rm = TRUE), .groups = "drop") %>%
@@ -213,6 +203,7 @@ result3 <-
   filter(!Interaction_addup == 0)%>%
   group_by(Study_Network_id) %>%
   ungroup()
+
 sp_number3 <- result3 %>%
   group_by(Study_Network_id, Pollinator_accepted_name) %>%
   summarise(freq = sum(Interaction_addup, na.rm = TRUE), .groups = "drop") %>%
@@ -293,9 +284,6 @@ cov_3  <- unic_inter(result3, data_interact)
 # To ensure only 3 species are selected per network, even in the case of ties,
 # consider using ties.method = "first" in the rank() function,
 # or alternatively, use slice_head(n = 3) after arranging by abundance to strictly limit the output to the top 3.
-
-library(dplyr)
-traits<-read.csv("data/processed/merge.trait.csv", header = TRUE, fileEncoding = "UTF-8")
 data_merge_trait <- left_join(data_merge, traits, by = "Plant_accepted_name")
 
 data_count_scaled_trait<-data_count_scaled%>%
