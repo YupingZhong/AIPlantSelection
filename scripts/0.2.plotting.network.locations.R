@@ -1,6 +1,6 @@
 ############################################################
 # Optimising plant species selection for automated monitoring
-# Part 2: Network overview and plot network locations
+# Part 2: Network overview and network locations
 ############################################################
 
 # ==========================================================
