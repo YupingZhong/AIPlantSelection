@@ -6,7 +6,7 @@
 library(ggplot2)
 library(dplyr)
 library(tidyr)
-result_all<-read.csv("result_all_published_PD.csv",header=TRUE)
+result_all<-read.csv("data/processed/result_all_published_PD.csv",header=TRUE)
 
 
 #result_all<-read.csv("unic_inter_result_all_published.csv",header=TRUE)#when calculate unique interaction coverage

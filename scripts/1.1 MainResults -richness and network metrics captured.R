@@ -287,7 +287,7 @@ cov_3  <- unic_inter(result3, data_interact)
 data_merge_trait <- left_join(data_merge, traits, by = "Plant_accepted_name")
 
 data_count_scaled_trait<-data_count_scaled%>%
-  left_join( traits%>%rename(Plant_species = Plant_accepted_name), by = "Plant_species")
+  left_join(traits %>% rename(Plant_species = Plant_accepted_name), by = "Plant_species")
 
 colnames(data_count_scaled)
 nrow(data_count_scaled_trait)
@@ -295,7 +295,7 @@ nrow(data_count_scaled)
 
 ## overview of the flower shape
 
-flw.no<-data_count_scaled%>%
+flw.no <- data_count_scaled%>%
   group_by(Study_Network_id) %>%
   summarise(n_flower_shapes = n_distinct(flw_shape_revised))
 
@@ -310,7 +310,6 @@ pct_5
 pct_10
 
 #Identify the most abundant species in each floral shape
-library(dplyr)
 abun_species_top5 <- data_count_scaled %>%
   group_by(Study_Network_id, flw_shape_revised) %>%
   arrange(Study_Network_id, flw_shape_revised, desc(Flower_count_scaled)) %>%
@@ -417,7 +416,8 @@ library(stringr)
 library(tidyr)
 library(V.PhyloMaker2)
 library(ape)
-
+#library("devtools")
+#devtools::install_github("jinyizju/V.PhyloMaker2")
 
 #------------------------------------
 # 1. Prepare species list for phylogeny
@@ -447,7 +447,7 @@ plant_sp <- data_count_scaled %>%
 #------------------------------------
 
 data("GBOTB.extended.TPL")
-data("nodes.info.TPL")
+#data("nodes.info.TPL")
 
 
 phylo_result <- phylo.maker(
