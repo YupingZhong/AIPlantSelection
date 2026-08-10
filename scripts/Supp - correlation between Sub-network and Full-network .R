@@ -10,22 +10,23 @@ library(dplyr)
 library(tidyr)
 library(ggpubr)
 library(cowplot)
-head(result_all)
-result_all<-read.csv("result_all_published_phylo.csv",header=TRUE)
 
+result_all<-read.csv("data/processed/result_all_published_PD.csv",header=TRUE)
+colnames(result_all)
 
-plot_rich_site<-result_all[,c("Study_Network_id","Abun_Top10_Rich","Abun_Top3_Rich","Abun_Top5_Rich",
-                              "FlwShape_Top5_Rich","FlwShape_Top3_Rich","Total_Rich")]
+plot_rich_site<-result_all[,c("Study_Network_id","percentage_Abun10","percentage_Abun3","percentage_Abun5",
+                              "percentage_FlwShape5","percentage_FlwShape3","total_pollinator_count_Abun10")]
 head(plot_rich_site)
 
 ###################################################################
 
 # ---------- 基础主题和颜色 ----------
 my_colors <- c(
-  "Top 10" = "#66C2A5", "Top 5" = "#4E79A7", "Top 3" = "#F28E2B",
-  "flw 5" = "#4E79A7", "flw 3" = "#F28E2B",
-  "Random 10" = "#66C2A5", "Random 5" = "#4E79A7", "Random 3" = "#F28E2B"
+  "Top 10" = "#66C2A5", "Top 5" = "#B07AA1", "Top 3" = "#E9C46A",
+  "flw 5" = "#B07AA1", "flw 3" = "#E9C46A",
+  "Random 10" = "#66C2A5", "Random 5" = "#B07AA1", "Random 3" = "#E9C46A"
 )
+
 
 base_theme <- theme_classic(base_size = 12) +
   theme(
@@ -61,47 +62,47 @@ get_linetype <- function(df, x_col, y_col, group_col){
 
 # ---------- reshape Abundance, Flower-shape, Random ----------
 rich_abun_long <- result_all %>%
-  dplyr::select(Study_Network_id, Total_Rich, Abun_Top10_Rich, Abun_Top5_Rich, Abun_Top3_Rich) %>%
-  pivot_longer(cols = c(Abun_Top10_Rich, Abun_Top5_Rich, Abun_Top3_Rich),
+  dplyr::select(Study_Network_id, total_pollinator_count_Abun10, percentage_Abun10, percentage_Abun5, percentage_Abun3) %>%
+  pivot_longer(cols = c(percentage_Abun10, percentage_Abun5, percentage_Abun3),
                names_to = "Top_Plant_Level", values_to = "Richness_Value") %>%
   mutate(Top_Plant_Level = factor(Top_Plant_Level, 
-                                  levels = c("Abun_Top10_Rich","Abun_Top5_Rich","Abun_Top3_Rich"),
+                                  levels = c("percentage_Abun10","percentage_Abun5","percentage_Abun3"),
                                   labels = c("Top 10","Top 5","Top 3")))
 
 rich_shape_long <- result_all %>%
-  dplyr::select(Study_Network_id, Total_Rich, FlwShape_Top5_Rich, FlwShape_Top3_Rich) %>%
-  pivot_longer(cols = c(FlwShape_Top5_Rich, FlwShape_Top3_Rich),
+  dplyr::select(Study_Network_id, total_pollinator_count_Abun10, percentage_FlwShape5, percentage_FlwShape3) %>%
+  pivot_longer(cols = c(percentage_FlwShape5, percentage_FlwShape3),
                names_to = "flw_Plant_Level", values_to = "Richness_Value") %>%
   mutate(Top_Plant_Level = factor(flw_Plant_Level,
-                                  levels = c("FlwShape_Top5_Rich","FlwShape_Top3_Rich"),
+                                  levels = c("percentage_FlwShape5","percentage_FlwShape3"),
                                   labels = c("flw 5","flw 3")))
 
 rich_random_long <- result_all %>%
-  dplyr::select(Study_Network_id, Total_Rich, Random_10_Rich, Random_5_Rich, Random_3_Rich) %>%
-  pivot_longer(cols = c(Random_10_Rich, Random_5_Rich, Random_3_Rich),
+  dplyr::select(Study_Network_id, total_pollinator_count_Abun10, random_mean_percentage_Random10, random_mean_percentage_Random5, random_mean_percentage_Random3) %>%
+  pivot_longer(cols = c(random_mean_percentage_Random10, random_mean_percentage_Random5, random_mean_percentage_Random3),
                names_to = "Random_Level", values_to = "Richness_Value") %>%
   mutate(Top_Plant_Level = factor(Random_Level,
-                                  levels = c("Random_10_Rich","Random_5_Rich","Random_3_Rich"),
+                                  levels = c("random_mean_percentage_Random10","random_mean_percentage_Random5","random_mean_percentage_Random3"),
                                   labels = c("Random 10","Random 5","Random 3")))
 
 # ---------- 计算每组 linetype ----------
 linetype_abun <- get_linetype(
   rich_abun_long,
-  x_col = "Total_Rich",
+  x_col = "total_pollinator_count_Abun10",
   y_col = "Richness_Value",
   group_col = "Top_Plant_Level"
 )
 
 linetype_shape <- get_linetype(
   rich_shape_long,
-  x_col = "Total_Rich",
+  x_col = "total_pollinator_count_Abun10",
   y_col = "Richness_Value",
   group_col = "Top_Plant_Level"
 )
 
 linetype_random <- get_linetype(
   rich_random_long,
-  x_col = "Total_Rich",
+  x_col = "total_pollinator_count_Abun10",
   y_col = "Richness_Value",
   group_col = "Top_Plant_Level"
 )
@@ -119,7 +120,7 @@ plot_rich <- function(df, linetype_df, ylab,
     cor_label_y <- seq(0.98, 0.98 - 0.02*(n_group-1), length.out = n_group)
   }
   
-  ggplot(df, aes(x = Total_Rich, y = Richness_Value, color = Top_Plant_Level)) +
+  ggplot(df, aes(x = total_pollinator_count_Abun10, y = Richness_Value, color = Top_Plant_Level)) +
     geom_point(shape = 1, size = 2,
                position = position_jitter(width = 0.03, height = 0.5)) +
     geom_smooth(
@@ -260,14 +261,14 @@ all_connectance_df<- readRDS(
 
 my_colors <- c(
   "Top 10" = "#66C2A5",
-  "Top 3"  = "#E9C46A",
   "Top 5"  = "#B07AA1",
-  "flw 3"  = "#E9C46A",
+  "Top 3"  = "#E9C46A",
   "flw 5"  = "#B07AA1",
+  "flw 3"  = "#E9C46A",
+  "Phylo 10" = "#66C2A5",
+  "Phylo 5"  = "#B07AA1",
+  "Phylo 3"  = "#E9C46A"
 )
-
-
-
 ############################################################
 # Figure 1
 # Abundance + Phylogeny top N vs full network
