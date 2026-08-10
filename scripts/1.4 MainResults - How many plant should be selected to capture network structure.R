@@ -223,10 +223,10 @@ get_structure_curve <- function(max_n,
     }
     
     r_nodf <- if (length(nodf_sub) > 2)
-      cor(nodf_sub, nodf_full) else NA_real_
+      cor(nodf_sub, nodf_full, method = "spearman") else NA_real_
     
     r_conn <- if (length(conn_sub) > 2)
-      cor(conn_sub, conn_full) else NA_real_
+      cor(conn_sub, conn_full, method = "spearman") else NA_real_
     
     results <- rbind(
       results,
@@ -364,11 +364,11 @@ get_structure_curve_random <- function(max_n,
       }
       
       if (length(nodf_sub) > 2) {
-        r_nodf_rep <- c(r_nodf_rep, cor(nodf_sub, nodf_full))
+        r_nodf_rep <- c(r_nodf_rep, cor(nodf_sub, nodf_full, method = "spearman"))
       }
       
       if (length(conn_sub) > 2) {
-        r_conn_rep <- c(r_conn_rep, cor(conn_sub, conn_full))
+        r_conn_rep <- c(r_conn_rep, cor(conn_sub, conn_full, method = "spearman"))
       }
     }
     
@@ -427,8 +427,10 @@ fit_breakpoint <- function(df, response) {
 
 # =========================
 # 5. Plateau detection 
-#We defined the minimum sampling effort as the smallest number of top-abundant plant species at 
-#which the correlation between subsampled and full-network nestedness exceeded 0.6.
+#We defined the minimum sampling effort as the smallest number of top-abundant 
+#plant species at which the Spearman rank correlation between the subsampled and 
+#full-network metrics reached ρ ≥ 0.8, indicating a strong correspondence with 
+#the full network.
 # =========================
 detect_plateau <- function(df, response, threshold = 0.6) {
   
@@ -458,10 +460,10 @@ r_curve_random <- get_structure_curve_random(
 )
 
 # save
-# saveRDS(r_curve_random,"r_curve_random.rds")
-# saveRDS(r_curve,"r_curve.rds")
-r_curve_random<-readRDS("r_curve_random.rds")
-r_curve<-readRDS("r_curve.rds")
+#saveRDS(r_curve_random,"data/processed/spearman_r_curve_random.rds")
+#saveRDS(r_curve,"data/processed/spearman_r_curve.rds")
+r_curve_random<-readRDS("data/processed/spearman_r_curve_random.rds")
+r_curve<-readRDS("data/processed/spearman_r_curve.rds")
 
 `# =========================
 # 7. MODELS (NODF + CONNECTANCE)
@@ -552,7 +554,7 @@ geom_line(
 geom_point(
   data = r_curve,
   aes(x = n, y = r_nodf),
-  color = "#D55E00",
+  color = "#B84E22",
   size = 2
 ) +
   
@@ -560,7 +562,7 @@ geom_point(
 geom_line(
   data = pred_df_nodf,
   aes(x = n, y = pred_top),
-  color = "#D55E00",
+  color = "#F5A88A",
   linewidth = 1.3
 ) +
   
@@ -576,7 +578,7 @@ geom_line(
   # ===== PLATEAU LINES =====
 geom_vline(
   xintercept = plateau_nodf,
-  color = "#D55E00",
+  color = "#F5A88A",
   linewidth = 1.2,
   alpha = 0.8
 ) +
@@ -595,7 +597,7 @@ annotate(
   x = plateau_nodf-12,
   y = max(r_curve$r_nodf, na.rm = TRUE) - 0.15,  # 统一偏移
   label = paste0("Abundant:\nn = ", plateau_nodf),
-  color = "#D55E00",
+  color = "#B84E22",
   vjust = 1,
   hjust = -0.1,
   size = 3.5
@@ -647,14 +649,14 @@ geom_line(
   geom_point(
     data = r_curve,
     aes(x = n, y = r_conn),
-    color = "#0072B2",
+    color = "#355A9A",
     size = 2
   ) +
   
   geom_line(
     data = pred_df_conn,
     aes(x = n, y = pred_top),
-    color = "#0072B2",
+    color = "#A5B5D9",
     linewidth = 1.3
   ) +
   
@@ -669,7 +671,7 @@ geom_line(
   
   geom_vline(
     xintercept = plateau_conn,
-    color = "#0072B2",
+    color = "#355A9A",
     linewidth = 1.2,            # 加上linewidth
     alpha = 0.8
   ) +
@@ -688,7 +690,7 @@ annotate(
   x = plateau_conn-12,
   y = max(r_curve$r_conn, na.rm = TRUE) - 0.15,  # 统一偏移
   label = paste0("Abundant:\nn = ", plateau_conn),
-  color = "#0072B2",
+  color = "#355A9A",
   vjust = 1,
   hjust = -0.1,
   size = 3.5
@@ -728,5 +730,5 @@ combined_plot_suf <- plot_grid(
 )
 
 combined_plot_suf
-ggsave("/Chap1_TargetPlant_to_monitor/result_260723/sufficient_n_plant.png", combined_plot_suf, width = 8, 
+ggsave("/Chap1_TargetPlant_to_monitor/result_260723/spearman_sufficient_n_plant.png", combined_plot_suf, width = 8, 
        height = 3.5, units = "in", dpi = 300)
