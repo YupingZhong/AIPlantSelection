@@ -190,7 +190,7 @@ connect_cols <- c(
   "Connectance_Pylo5",
   "Connectance_Pylo3")
 
-# Pearson correlation with full network
+# spearman correlation with full network
 
 cor_results2 <- lapply(
   connect_cols[-1],
@@ -225,12 +225,13 @@ cor_results2 <- lapply(
     test <- cor.test(
       x_clean,
       y_clean,
-      method = "pearson"
+      method = "spearman",
+      exact = FALSE
     )
     
     
     c(
-      r = unname(test$estimate),
+      rho = unname(test$estimate),
       p_value = test$p.value,
       n = length(x_clean)
     )
@@ -248,7 +249,7 @@ cor_results_df2 <- as.data.frame(
   mutate(
     Comparison = connect_cols[-1],
     Metric = "Connectance",
-    r = as.numeric(r),
+    rho = as.numeric(rho),
     p_value = as.numeric(p_value),
     n = as.numeric(n)
   )
@@ -258,7 +259,7 @@ rownames(cor_results_df2) <- connect_cols[-1]
 
 
 print(
-  "Pearson correlation with full network:"
+  "spearman correlation with full network:"
 )
 
 print(cor_results_df2)
@@ -267,173 +268,8 @@ print(cor_results_df2)
 # =========================
 # Save results
 # =========================
-
+saveRDS(all_connectance_df, "data/processed/all_connectance_df.rds")
 saveRDS(cor_results_df2, "data/processed/cor_results_df2.rds")
-
-
-##===============================
-
-#---------3.3 Network metrics for random selection--------
-#note: random process will take a few minutes
-
-#================================
-library(dplyr)
-library(tidyr)
-library(pbapply)
-library(ggplot2)
-
-
-set.seed(2025)
-
-plant_pool <- data_count_scaled %>%
-  distinct(Study_Network_id, Plant_species, Flower_count_scaled, .keep_all = TRUE)
-
-plant_pool_split <- split(plant_pool, plant_pool$Study_Network_id)
-
-network_list <- unique(plant_pool$Study_Network_id)
-
-# sampling function
-get_random_interactions <- function(n_sp){
-  
-  sampled_plants <- do.call(rbind, lapply(plant_pool_split, function(df){
-    
-    n_select <- min(n_sp, nrow(df))
-    df[sample(nrow(df), n_select), ]
-    
-  }))
-  
-  data_interact %>%
-    inner_join(
-      sampled_plants,
-      by = c(
-        "Study_Network_id",
-        "Plant_original_name" = "Plant_species"
-      )
-    )
-}
-
-
-calc_nodf <- function(df){
-  
-  dt <- as.data.table(df)
-  
-  mat_df <- dcast(
-    dt,
-    Plant_accepted_name ~ Pollinator_accepted_name,
-    value.var = "Interaction_addup",
-    fill = 0
-  )
-  
-  mat <- as.matrix(mat_df[, -1, with = FALSE])
-  mat[is.na(mat)] <- 0
-  
-  mat <- mat[rowSums(mat) > 0, , drop = FALSE]
-  mat <- mat[, colSums(mat) > 0, drop = FALSE]
-  
-  if (nrow(mat) < 2 || ncol(mat) < 2) return(NA_real_)
-  
-  tryCatch(
-    bipartite::nested(mat, method = "NODF"),
-    error = function(e) NA_real_
-  )
-}
-
-calc_connectance <- function(df){
-  
-  dt <- as.data.table(df)
-  
-  mat_df <- dcast(
-    dt,
-    Plant_accepted_name ~ Pollinator_accepted_name,
-    value.var = "Interaction_addup",
-    fill = 0
-  )
-  
-  mat <- as.matrix(mat_df[, -1, with = FALSE])
-  mat[is.na(mat)] <- 0
-  
-  mat <- mat[rowSums(mat) > 0, , drop = FALSE]
-  mat <- mat[, colSums(mat) > 0, drop = FALSE]
-  
-  if (nrow(mat) < 2 || ncol(mat) < 2) return(NA_real_)
-  
-  sum(mat > 0) / (nrow(mat) * ncol(mat))
-}
-
-library(pbapply)
-
-run_random_metrics <- function(n_sp, n_iter = 1000){
-  
-  pboptions(type = "timer")
-  
-  res <- pblapply(1:n_iter, function(i){
-    
-    random_df <- get_random_interactions(n_sp)
-    
-    random_df %>%
-      group_by(Study_Network_id) %>%
-      summarise(
-        NODF = calc_nodf(cur_data()),
-        Connectance = calc_connectance(cur_data()),
-        .groups = "drop"
-      )
-    
-  })
-  
-  bind_rows(res)
-}
-
-# run random 
-# 
-# random_10_all <- run_random_metrics(10, 1000)
-# random_5_all  <- run_random_metrics(5, 1000)
-# random_3_all  <- run_random_metrics(3, 1000)
-# 
-# random_10 <- random_10_all %>%
-#   group_by(Study_Network_id) %>%
-#   summarise(
-#     Random_NODF = mean(NODF, na.rm = TRUE),
-#     Random_Connectance = mean(Connectance, na.rm = TRUE),
-#     .groups = "drop"
-#   ) %>%
-#   mutate(Method = "random 10")
-# 
-# random_5 <- random_5_all %>%
-#   group_by(Study_Network_id) %>%
-#   summarise(
-#     Random_NODF = mean(NODF, na.rm = TRUE),
-#     Random_Connectance = mean(Connectance, na.rm = TRUE),
-#     .groups = "drop"
-#   ) %>%
-#   mutate(Method = "random 5")
-# 
-# random_3 <- random_3_all %>%
-#   group_by(Study_Network_id) %>%
-#   summarise(
-#     Random_NODF = mean(NODF, na.rm = TRUE),
-#     Random_Connectance = mean(Connectance, na.rm = TRUE),
-#     .groups = "drop"
-#   ) %>%
-#   mutate(Method = "random 3")
-
-# random_all <- bind_rows(random_10, random_5, random_3)
-# 
-# saveRDS(random_all,"data/processed/random_all_metrics.rds")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

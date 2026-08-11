@@ -185,9 +185,9 @@ cor_results <- lapply(nodf_cols[-1], function(x) {
     return(c(r = NA, p_value = NA, n = length(x_clean)))
   }
   
-  test <- cor.test(x_clean, y_clean, method = "pearson")
+  test <- cor.test(x_clean, y_clean, method = "spearman", exact = FALSE)
   
-  c(r = unname(test$estimate), p_value = test$p.value, n = length(x_clean))
+  c(rho = unname(test$estimate), p_value = test$p.value, n = length(x_clean))
 })
 
 
@@ -199,13 +199,13 @@ cor_results_df <- as.data.frame(do.call(rbind, cor_results)) %>%
   mutate(
     Comparison = nodf_cols[-1],
     Metric = "Nestedness",
-    r = as.numeric(r),
+    rho = as.numeric(rho),
     p_value = as.numeric(p_value)
   )
 
 rownames(cor_results_df) <- nodf_cols[-1]
 # 
-# print("Pearson correlation with full network:")
+# print("spearman correlation with full network:")
 print(cor_results_df)
 
 cor(

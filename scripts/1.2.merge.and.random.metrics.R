@@ -19,6 +19,9 @@ nestedness_cor <- readRDS(
 connectance_cor <- readRDS(
   "data/processed/cor_results_df2.rds")
 
+h2_cor <- readRDS(
+"data/processed/cor_results_H2_df.rds")
+
 # ==========================================================
 # Combine correlation results
 # ==========================================================
@@ -28,7 +31,10 @@ cor_results_all <- bind_rows(
     mutate(Metric = "Nestedness"),
   
   connectance_cor %>%
-    mutate(Metric = "Connectance")
+    mutate(Metric = "Connectance"),
+  
+  h2_cor%>%
+    mutate(Metric = "H2")
 )
 
 cor_results_all
@@ -231,7 +237,8 @@ run_random_metrics <- function(
         group_modify(
           ~ tibble(
             NODF = calc_nodf(.x),
-            Connectance = calc_connectance(.x)
+            Connectance = calc_connectance(.x),
+            H2 = calc_H2(.x)
           )
         ) %>%
         ungroup()
@@ -269,14 +276,9 @@ random_10 <- random_10_all %>%
     Study_Network_id
   ) %>%
   summarise(
-    Random_NODF = mean(
-      NODF,
-      na.rm = TRUE
-    ),
-    Random_Connectance = mean(
-      Connectance,
-      na.rm = TRUE
-    ),
+    Random_NODF = mean(NODF, na.rm = TRUE),
+    Random_Connectance = mean(Connectance, na.rm = TRUE),
+    Random_H2 = mean(H2, na.rm = TRUE),
     .groups = "drop"
   ) %>%
   mutate(
@@ -288,14 +290,9 @@ random_5 <- random_5_all %>%
     Study_Network_id
   ) %>%
   summarise(
-    Random_NODF = mean(
-      NODF,
-      na.rm = TRUE
-    ),
-    Random_Connectance = mean(
-      Connectance,
-      na.rm = TRUE
-    ),
+    Random_NODF = mean(NODF, na.rm = TRUE),
+    Random_Connectance = mean(Connectance, na.rm = TRUE),
+    Random_H2 = mean(H2, na.rm = TRUE),
     .groups = "drop"
   ) %>%
   mutate(
@@ -307,14 +304,9 @@ random_3 <- random_3_all %>%
     Study_Network_id
   ) %>%
   summarise(
-    Random_NODF = mean(
-      NODF,
-      na.rm = TRUE
-    ),
-    Random_Connectance = mean(
-      Connectance,
-      na.rm = TRUE
-    ),
+    Random_NODF = mean(NODF, na.rm = TRUE),
+    Random_Connectance = mean(Connectance, na.rm = TRUE),
+    Random_H2 = mean(H2, na.rm = TRUE),
     .groups = "drop"
   ) %>%
   mutate(
