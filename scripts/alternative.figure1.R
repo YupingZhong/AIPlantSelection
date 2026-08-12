@@ -36,7 +36,7 @@ data_count_scaled <- readRDS(
 )
 
 Kal_id_list <- data_count_scaled %>%
-  select(
+  dplyr::select(
     Study_id,
     Study_Network_id
   ) %>%
@@ -54,16 +54,9 @@ result_all <- read.csv(
   )
 
 # 检查是否还有 Kallnik
-result_all %>%
-  filter(
-    Study_Network_id %in% Kal_id_list$Study_Network_id
-  )
+result_all %>%filter(Study_Network_id %in% Kal_id_list$Study_Network_id)
 
-result_all %>%
-  summarise(
-    n_sample = n_distinct(Study_Network_id),
-    .groups = "drop"
-  )
+result_all %>%summarise(n_sample = n_distinct(Study_Network_id),.groups = "drop")
 # ==========================================================
 # Calculate network size
 # ==========================================================
@@ -88,7 +81,7 @@ range(
 # ==========================================================
 
 plot_data <- result_all %>%
-  select(
+  dplyr::select(
     Study_Network_id,
     
     # Abundance
@@ -246,7 +239,7 @@ plot_summary$Plant_Number <- factor(
 # ==========================================================
 
 paired_data <- plot_data %>%
-  select(
+  dplyr::select(
     Study_Network_id,
     Plant_Number,
     Strategy,
@@ -888,3 +881,11 @@ plot_data %>%
     .groups = "drop"
   )
 
+ggsave(
+  "/Chap1_TargetPlant_to_monitor/result_260723/main_violin_network_size.png",
+  plot = plot_violin_size,
+  width = 9,
+  height = 6,
+  units = "in",
+  dpi = 300
+)

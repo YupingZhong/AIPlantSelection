@@ -219,6 +219,8 @@ merged_data3 <- merge(sp_number3,total_number,by.x = "Study_Network_id", by.y = 
 percent_10 <- merged_data10 %>%
   mutate(percentage = (pollinator_count / total_pollinator_count) * 100)
 
+saveRDS(percent_10,"data/processed/percent_10.rds")
+
 percent_5 <- merged_data5 %>%
   mutate(percentage = (pollinator_count / total_pollinator_count) * 100)
 

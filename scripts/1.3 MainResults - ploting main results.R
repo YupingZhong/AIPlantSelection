@@ -6,10 +6,43 @@
 library(ggplot2)
 library(dplyr)
 library(tidyr)
-result_all<-read.csv("data/processed/result_all_published_PD.csv",header=TRUE)
+
+# ==========================================================
+# Load data
+# ==========================================================
+
+data_count_scaled <- readRDS(
+  "data/processed/data_count_scaled_published.rds"
+)
+
+Kal_id_list <- data_count_scaled %>%
+  dplyr::select(
+    Study_id,
+    Study_Network_id
+  ) %>%
+  filter(
+    Study_id == "22_Kallnik"
+  ) %>%
+  distinct()
+
+result_all <- read.csv(
+  "data/processed/result_all_published_PD.csv",
+  header = TRUE
+) %>%
+  filter(
+    !Study_Network_id %in% Kal_id_list$Study_Network_id
+  )
+
+# 检查是否还有 Kallnik
+result_all %>%filter(Study_Network_id %in% Kal_id_list$Study_Network_id)
+
+result_all %>%summarise(n_sample = n_distinct(Study_Network_id),.groups = "drop")
 
 
-#result_all<-read.csv("unic_inter_result_all_published.csv",header=TRUE)#when calculate unique interaction coverage
+
+##############
+#result_all<-read.csv("data/processed/result_all_published_PD.csv",header=TRUE)
+#resu lt_all<-read.csv("unic_inter_result_all_published.csv",header=TRUE)#when calculate unique interaction coverage
 head(result_all)
 plottest<-result_all[,c("Study_Network_id","percentage_Abun10","percentage_Abun5","percentage_Abun3","percentage_FlwShape5","percentage_FlwShape3",
                         "percentage_Pylo10","percentage_Pylo5","percentage_Pylo3","random_mean_percentage_Random10","random_mean_percentage_Random5","random_mean_percentage_Random3")]
@@ -155,6 +188,13 @@ plot
 #############
 # ------------------------------------------
 # Test for significant differences between groups
+# ------------------------------------------
+# ------------------------------------------
+# Normality was assessed using the Shapiro-Wilk test and homogeneity
+# of variances using Levene's test. If both groups were normally
+# distributed and had equal variances, an independent two-sample
+# Student's t-test was applied. Otherwise, a two-sided Wilcoxon
+# rank-sum test was used.
 # ------------------------------------------
 
 library(tidyverse)
@@ -381,7 +421,7 @@ significance_results <- test_results %>%
     )
     
   ) %>%
-  select(
+  dplyr::select(
     group1,
     group2,
     p_value,
@@ -448,7 +488,11 @@ ggsave("/Chap1_TargetPlant_to_monitor/result_260526/main_unique_interaction.png"
 #---z-score---
 ######################################
 
-z_results<-readRDS("data/processed/z_results.rds")
+z_results<-readRDS("data/processed/z_results.rds")%>%
+  filter(
+    !Study_Network_id %in% Kal_id_list$Study_Network_id
+  )
+
 sample_size <- z_results %>%
   filter(!is.na(Z_score)) %>%
   group_by(
@@ -574,9 +618,14 @@ zplot<-ggplot(
   theme_classic()
 
 zplot
-
-ggsave("/Chap1_TargetPlant_to_monitor/result_260723/zscore_phylo.png", zplot, width = 9, height = 6, units = "in", dpi = 300)
-
+ggsave(
+  "/Chap1_TargetPlant_to_monitor/result_260723/zscore_phylo.png",
+  plot = zplot,
+  width = 7,
+  height = 5,
+  units = "in",
+  dpi = 300
+)
 
 friedman.test(
   Z_score ~ Strategy | Study_Network_id,

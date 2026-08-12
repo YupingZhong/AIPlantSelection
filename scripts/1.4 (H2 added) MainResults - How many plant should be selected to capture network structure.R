@@ -1046,6 +1046,11 @@ print(r_curve)
 print(r_curve_random)
 
 
+
+######################### read and plot. dont have to run radom process every time
+
+r_curve <- readRDS("data/processed/spearman_r_curve.rds")
+r_curve_random <- readRDS("data/processed/spearman_r_curve_random.rds")
 # =============================================================================
 # 16. Saturation model
 # =============================================================================
@@ -1439,8 +1444,6 @@ if (!is.null(sat_model_H2_rand)) {
 
 p_nodf <- ggplot() +
   
-  # Random SD ribbon
-  
   geom_ribbon(
     data = r_curve_random,
     aes(
@@ -1452,21 +1455,17 @@ p_nodf <- ggplot() +
     alpha = 0.5
   ) +
   
-  # Random mean
-  
-  geom_line(
-    data = r_curve_random,
-    aes(
-      x = n,
-      y = rho_nodf_mean
-    ),
-    color = "grey50",
-    linetype = "dashed",
-    linewidth = 1,
-    alpha = 0.7
-  ) +
-  
-  # Abundance observed
+  # geom_line(
+  #   data = r_curve_random,
+  #   aes(
+  #     x = n,
+  #     y = rho_nodf_mean
+  #   ),
+  #   color = "grey50",
+  #   linetype = "dashed",
+  #   linewidth = 1,
+  #   alpha = 0.7
+  # ) +
   
   geom_point(
     data = r_curve,
@@ -1478,41 +1477,12 @@ p_nodf <- ggplot() +
     size = 2
   ) +
   
-  # Abundance saturation fit
-  
-  geom_line(
-    data = pred_df,
-    aes(
-      x = n,
-      y = pred_nodf_top
-    ),
-    color = "#F5A88A",
-    linewidth = 1.3
-  ) +
-  
-  # Random saturation fit
-  
-  geom_line(
-    data = pred_df,
-    aes(
-      x = n,
-      y = pred_nodf_rand
-    ),
-    color = "grey50",
-    linetype = "dotted",
-    linewidth = 0.9
-  ) +
-  
-  # Abundance plateau
-  
   geom_vline(
     xintercept = plateau_nodf,
     color = "#F5A88A",
     linewidth = 1.2,
     alpha = 0.8
   ) +
-  
-  # Random plateau
   
   geom_vline(
     xintercept = plateau_nodf_rand,
@@ -1521,21 +1491,20 @@ p_nodf <- ggplot() +
     linewidth = 1.2,
     alpha = 0.8
   ) +
-  # ===== LABELS =====
-
-annotate(
-  "text",
-  x = plateau_nodf - 12,
-  y = max(r_curve$rho_nodf, na.rm = TRUE) - 0.15,
-  label = paste0(
-    "Abundant:\nn = ",
-    plateau_nodf
-  ),
-  color = "#B84E22",
-  vjust = 1,
-  hjust = -0.1,
-  size = 3.5
-) +
+  
+  annotate(
+    "text",
+    x = plateau_nodf - 12,
+    y = max(r_curve$rho_nodf, na.rm = TRUE) - 0.15,
+    label = paste0(
+      "Abundant:\nn = ",
+      plateau_nodf
+    ),
+    color = "#B84E22",
+    vjust = 1,
+    hjust = -0.1,
+    size = 3.5
+  ) +
   
   annotate(
     "text",
@@ -1553,25 +1522,23 @@ annotate(
     hjust = -0.1,
     size = 3.5
   ) +
+  
   labs(
-    x = "Number of plant species (n)",
-    y = "Spearman's \u03c1 — NODF"
+    title = "a. Nestedness",
+    x = "Sampled plant species",
+    y = NULL
   ) +
   
-  theme_classic(
-    base_size = 13
-  ) +
+  theme_classic(base_size = 13) +
   
   theme(
-    axis.text = element_text(
-      size = 11
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold"
     ),
-    
-    axis.title = element_text(
-      size = 12
-    )
+    axis.text = element_text(size = 11),
+    axis.title = element_text(size = 12)
   )
-
 
 # =============================================================================
 # 23. Connectance plot
@@ -1590,17 +1557,17 @@ p_conn <- ggplot() +
     alpha = 0.5
   ) +
   
-  geom_line(
-    data = r_curve_random,
-    aes(
-      x = n,
-      y = rho_conn_mean
-    ),
-    color = "grey50",
-    linetype = "dashed",
-    linewidth = 1,
-    alpha = 0.7
-  ) +
+  # geom_line(
+  #   data = r_curve_random,
+  #   aes(
+  #     x = n,
+  #     y = rho_conn_mean
+  #   ),
+  #   color = "grey50",
+  #   linetype = "dashed",
+  #   linewidth = 1,
+  #   alpha = 0.7
+  # ) +
   
   geom_point(
     data = r_curve,
@@ -1610,27 +1577,6 @@ p_conn <- ggplot() +
     ),
     color = "#355A9A",
     size = 2
-  ) +
-  
-  geom_line(
-    data = pred_df,
-    aes(
-      x = n,
-      y = pred_conn_top
-    ),
-    color = "#A5B5D9",
-    linewidth = 1.3
-  ) +
-  
-  geom_line(
-    data = pred_df,
-    aes(
-      x = n,
-      y = pred_conn_rand
-    ),
-    color = "grey50",
-    linetype = "dotted",
-    linewidth = 0.9
   ) +
   
   geom_vline(
@@ -1647,25 +1593,24 @@ p_conn <- ggplot() +
     linewidth = 1.2,
     alpha = 0.8
   ) +
-  # ===== LABELS =====
-
-annotate(
-  "text",
-  x = plateau_conn - 12,
-  y = max(r_curve$rho_conn, na.rm = TRUE) - 0.15,
-  label = paste0(
-    "Abundant:\nn = ",
-    plateau_conn
-  ),
-  color = "#355A9A",
-  vjust = 1,
-  hjust = -0.1,
-  size = 3.5
-) +
   
   annotate(
     "text",
-    x = plateau_conn_rand - 12,
+    x = plateau_conn - 12,
+    y = max(r_curve$rho_conn, na.rm = TRUE) - 0.15,
+    label = paste0(
+      "Abundant:\nn = ",
+      plateau_conn
+    ),
+    color = "#355A9A",
+    vjust = 1,
+    hjust = -0.1,
+    size = 3.5
+  ) +
+  
+  annotate(
+    "text",
+    x = plateau_conn_rand + 5,
     y = max(
       r_curve_random$rho_conn_mean,
       na.rm = TRUE
@@ -1676,29 +1621,26 @@ annotate(
     ),
     color = "grey50",
     vjust = 1,
-    hjust = -0.1,
+    hjust = 0,
     size = 3.5
   ) +
   
   labs(
-    x = "Number of plant species (n)",
-    y = "Spearman's \u03c1 — Connectance"
+    title = "b. Connectance",
+    x = "Sampled plant species",
+    y = NULL
   ) +
   
-  theme_classic(
-    base_size = 13
-  ) +
+  theme_classic(base_size = 13) +
   
   theme(
-    axis.text = element_text(
-      size = 11
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold"
     ),
-    
-    axis.title = element_text(
-      size = 12
-    )
+    axis.text = element_text(size = 11),
+    axis.title = element_text(size = 12)
   )
-
 
 # =============================================================================
 # 24. H2 plot
@@ -1717,17 +1659,17 @@ p_H2 <- ggplot() +
     alpha = 0.5
   ) +
   
-  geom_line(
-    data = r_curve_random,
-    aes(
-      x = n,
-      y = rho_H2_mean
-    ),
-    color = "grey50",
-    linetype = "dashed",
-    linewidth = 1,
-    alpha = 0.7
-  ) +
+  # geom_line(
+  #   data = r_curve_random,
+  #   aes(
+  #     x = n,
+  #     y = rho_H2_mean
+  #   ),
+  #   color = "grey50",
+  #   linetype = "dashed",
+  #   linewidth = 1,
+  #   alpha = 0.7
+  # ) +
   
   geom_point(
     data = r_curve,
@@ -1737,27 +1679,6 @@ p_H2 <- ggplot() +
     ),
     color = "#6A4C93",
     size = 2
-  ) +
-  
-  geom_line(
-    data = pred_df,
-    aes(
-      x = n,
-      y = pred_H2_top
-    ),
-    color = "#B9A1D1",
-    linewidth = 1.3
-  ) +
-  
-  geom_line(
-    data = pred_df,
-    aes(
-      x = n,
-      y = pred_H2_rand
-    ),
-    color = "grey50",
-    linetype = "dotted",
-    linewidth = 0.9
   ) +
   
   geom_vline(
@@ -1774,21 +1695,20 @@ p_H2 <- ggplot() +
     linewidth = 1.2,
     alpha = 0.8
   ) +
-  # ===== LABELS =====
-
-annotate(
-  "text",
-  x = plateau_H2 - 12,
-  y = max(r_curve$rho_H2, na.rm = TRUE) - 0.15,
-  label = paste0(
-    "Abundant:\nn = ",
-    plateau_H2
-  ),
-  color = "#6A4C93",
-  vjust = 1,
-  hjust = -0.1,
-  size = 3.5
-) +
+  
+  annotate(
+    "text",
+    x = plateau_H2 - 12,
+    y = max(r_curve$rho_H2, na.rm = TRUE) - 0.15,
+    label = paste0(
+      "Abundant:\nn = ",
+      plateau_H2
+    ),
+    color = "#6A4C93",
+    vjust = 1,
+    hjust = -0.1,
+    size = 3.5
+  ) +
   
   annotate(
     "text",
@@ -1806,23 +1726,22 @@ annotate(
     hjust = -0.1,
     size = 3.5
   ) +
+  
   labs(
-    x = "Number of plant species (n)",
-    y = "Spearman's \u03c1 — H2"
+    title = "c. H2′",
+    x = "Sampled plant species",
+    y = NULL
   ) +
   
-  theme_classic(
-    base_size = 13
-  ) +
+  theme_classic(base_size = 13) +
   
   theme(
-    axis.text = element_text(
-      size = 11
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold"
     ),
-    
-    axis.title = element_text(
-      size = 12
-    )
+    axis.text = element_text(size = 11),
+    axis.title = element_text(size = 12)
   )
 
 
@@ -1845,10 +1764,27 @@ combined_plot_suf <- plot_grid(
   p_nodf,
   p_conn,
   p_H2,
-  ncol = 3
+  ncol = 3,
+  align = "hv"
+)
+
+y_title <- ggdraw() +
+  draw_label(
+    "Across-network Spearman's rho",
+    angle = 90,
+    fontface = "bold",
+    size = 12
+  )
+
+combined_plot_suf <- plot_grid(
+  y_title,
+  combined_plot_suf,
+  ncol = 2,
+  rel_widths = c(0.05, 1)
 )
 
 combined_plot_suf
+
 
 
 # =============================================================================
@@ -1858,12 +1794,11 @@ combined_plot_suf
 ggsave(
   "D:/Chap1_TargetPlant_to_monitor/result_260723/spearman_sufficient_n_plant_network_metrics.png",
   combined_plot_suf,
-  width = 11,
-  height = 3.5,
+  width = 11.5,
+  height = 3.8,
   units = "in",
   dpi = 300
 )
-
 
 # =============================================================================
 # 28. Save model objects

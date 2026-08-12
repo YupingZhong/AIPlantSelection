@@ -189,6 +189,255 @@ data_combined_all$Predicted_capture <- predict(
 data_combined_all$Residual_capture <-
   data_combined_all$Proportion_of_richness -
   data_combined_all$Predicted_capture
+##########################################
+
+###  Rare favored plant list
+
+
+###########################################################################
+
+#------Rare attractive plant list Word output
+
+
+# rarelist: 高吸引力植物
+rarelist <- Rare_favour_plants%>%distinct(Plant_accepted_name)
+#%>% filter(p.value > 0.05)
+
+
+sp_list_rare <- rarelist %>%
+  left_join(traits, by = "Plant_accepted_name") %>%
+  distinct(Plant_accepted_name, flw_shape_revised)
+
+# sp_list_rare$flw_shape_revised <- stringr::str_wrap(
+#   sp_list_rare$flw_shape_revised,
+#   width = 40
+# )
+
+# # 创建 flextable
+# ft <- flextable(sp_list_rare) %>%
+#   set_header_labels(
+#     Plant_accepted_name = "Plant species",
+#     flw_shape_revised = "Flower shape"
+#   ) %>%
+#   theme_booktabs() %>%
+#   fontsize(size = 11, part = "all") %>%
+#   italic(j = "Plant_accepted_name", part = "body") %>%
+#   width(j = "Plant_accepted_name", width = 3) %>%
+#   width(j = "flw_shape_revised", width = 5) %>%
+#   align(j = c("Plant_accepted_name", "flw_shape_revised"), align = "left")
+
+# ⭐按花型分组，把物种名拼接成一行（斜体在表格里再处理）
+sp_list_grouped <- sp_list_rare %>%
+  filter(!is.na(flw_shape_revised)) %>%
+  group_by(flw_shape_revised) %>%
+  summarise(
+    Plant_species = paste(sort(unique(Plant_accepted_name)), collapse = ", "),
+    .groups = "drop"
+  ) %>%
+  arrange(flw_shape_revised) %>%
+  mutate(Illustration = "") %>%               # ⭐留空列，方便后续手动插图
+  select(Illustration, flw_shape_revised, Plant_species)
+
+# 换行处理（如果花型名称或物种列表过长）
+sp_list_grouped$Plant_species <- stringr::str_wrap(sp_list_grouped$Plant_species, width = 60)
+
+# 创建 flextable
+ft <- flextable(sp_list_grouped) %>%
+  set_header_labels(
+    Illustration = "",
+    flw_shape_revised = "Flower shape",
+    Plant_species = "Plant species"
+  ) %>%
+  theme_booktabs() %>%
+  fontsize(size = 11, part = "all") %>%
+  italic(j = "Plant_species", part = "body") %>%
+  width(j = "Illustration", width = 1) %>%
+  width(j = "flw_shape_revised", width = 2.5) %>%
+  width(j = "Plant_species", width = 4.5) %>%
+  align(j = c("Illustration", "flw_shape_revised", "Plant_species"), align = "left")
+
+# 导出 Word
+# 导出 Word
+doc <- read_docx()
+doc <- body_add_flextable(doc, ft)
+print(doc, target = "./result_260526/sp_list_rare_new.docx")
+
+
+
+# network_group 有列: Study_Network_id, group (Present/Absent)
+attract_percent_10 <- percent_10 %>%
+  left_join(network_group %>% dplyr::select(Study_Network_id, present_group), by = "Study_Network_id")
+
+shapiro.test(attract_percent_10$percentage_Abun10[attract_percent_10$present_group=="Present"])
+shapiro.test(attract_percent_10$percentage_Abun10[attract_percent_10$present_group=="Absent"])
+
+wilcox.test(percentage_Abun10 ~ present_group, data = attract_percent_10)
+
+
+
+# 1️⃣ 分组
+attract_percent_10 <- attract_percent_10 %>%
+  mutate(
+    present_group = str_squish(present_group) %>% str_to_title(),
+    present_group = factor(present_group, levels = c("Present", "Absent"))
+  )
+
+# 2️⃣ Wilcoxon test
+wilcox_res <- wilcox.test(percentage_Abun10 ~ present_group, data = attract_percent_10)
+
+sig_label <- if(wilcox_res$p.value < 0.001) {
+  "***"
+} else if(wilcox_res$p.value < 0.01) {
+  "**"
+} else if(wilcox_res$p.value < 0.05) {
+  "*"
+} else {
+  "ns"
+}
+
+# 3️⃣ summary（n）
+data_summary <- attract_percent_10 %>%
+  group_by(present_group) %>%
+  summarise(
+    Mean_Percentage = mean(percentage_Abun10, na.rm = TRUE),
+    SD_Percentage = sd(percentage_Abun10, na.rm = TRUE),
+    n_non_missing = sum(!is.na(percentage_Abun10)),
+    .groups = "drop"
+  )
+
+group_colors <- c("Present" = "#6A51A3", "Absent" = "#BDBDBD")
+
+# 4️⃣ y 位置
+y_max <- max(attract_percent_10$percentage_Abun10, na.rm = TRUE)
+y_pos <- y_max * 1.1
+
+# =========================
+# 5️⃣ FINAL PLOT
+# =========================
+plot <- ggplot(attract_percent_10,
+               aes(x = present_group,
+                   y = percentage_Abun10,
+                   fill = present_group)) +
+  
+  geom_violin(trim = FALSE, alpha = 0.35, color = NA) +
+  geom_boxplot(width = 0.15, alpha = 0.6, outlier.shape = NA) +
+  geom_jitter(width = 0.15, size = 1.3, alpha = 0.4) +
+  
+  # mean
+  stat_summary(
+    fun = mean,
+    geom = "text",
+    aes(label = sprintf("%.1f%%", stat(y))),
+    vjust = -1,
+    position = position_nudge(x = -0.4)
+  ) +
+  
+  # n
+  geom_text(
+    data = data_summary,
+    aes(x = present_group,
+        y = Mean_Percentage + SD_Percentage,
+        label = paste0("n = ", n_non_missing)),
+    vjust = -0.5,
+    size = 4,
+    position = position_nudge(x = -0.4)
+  ) +
+  
+  
+  #号显著性（重点！）
+  geom_signif(
+    comparisons = list(c("Present", "Absent")),
+    annotations = sig_label,
+    y_position = y_pos,
+    tip_length = 0.01,
+    textsize = 6
+  ) +
+  
+  scale_fill_manual(values = group_colors) +
+  
+  labs(
+    x = "Presence of highly attractive plants in full network",
+    y = "Percent of pollinator richness captured (%)"
+  ) +
+  
+  theme_classic(base_size = 12) +
+  theme(
+    legend.position = "right",
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(color = "black"),
+    plot.margin = margin(5, 15, 5, 5)
+  )
+
+plot
+
+ggsave("./result_260526/rare_atract.png", plot, width = 6.5, height = 4, units = "in", dpi = 300)
+
+
+
+
+
+
+#########################################################################
+
+# 1️⃣ 汇总 + 直接生成论文格式列
+table2 <- attract_percent_10 %>%
+  group_by(present_group) %>%
+  summarise(
+    Mean = mean(percentage_Abun10, na.rm = TRUE),
+    SD = sd(percentage_Abun10, na.rm = TRUE),
+    n = sum(!is.na(percentage_Abun10)),
+    .groups = "drop"
+  ) %>%
+  
+  # ⭐ 合并 Mean ± SD（论文标准写法）
+  mutate(
+    `Richness captured (%)` = sprintf("%.2f ± %.2f", Mean, SD),
+    `P-value` = signif(wilcox_res$p.value, 3)
+  ) %>%
+  
+  # ⭐ 改列名（关键）
+  dplyr::select(
+    Group = present_group,
+    `Richness captured (%)`,
+    n,
+    `P-value`
+  )
+
+# 2️⃣ flextable 美化
+ft_table2 <- flextable(table2) %>%
+  theme_booktabs() %>%
+  autofit() %>%
+  fontsize(size = 10, part = "all") %>%
+  align(align = "center", part = "all") %>%
+  
+  # ⭐ 表头加粗
+  bold(part = "header") %>%
+  
+  # ⭐ Group 左对齐（更像论文）
+  align(j = "Group", align = "left", part = "all")
+
+# 3️⃣ Word 输出（优化标题）
+doc <- read_docx() %>%
+  body_add_par(
+    "Table 2. Comparison of pollinator richness captured by the top 10 abundant plants between networks with and without highly attractive plant species (Wilcoxon rank-sum test).",
+    style = "heading 2"
+  ) %>%
+  body_add_flextable(ft_table2)
+
+# 4️⃣ 保存
+print(doc, target = "./result_260526/Table2_Wilcoxon.docx")
+
+
+
+
+
+
+
+
+
+##########################################
+
+#Supp: sensitive test
 
 fig2_relation <- ggplot(data_combined_all,
                         aes(x = Abundance_scaled,
@@ -403,240 +652,12 @@ ggsave(
   height = 9,
   dpi = 300
 )
-##########################################
-
-###  Rare favored plant list
-
-
-###########################################################################
-
-#------Rare attractive plant list Word output
-
-
-# rarelist: 高吸引力植物
-rarelist <- Rare_favour_plants%>%distinct(Plant_accepted_name)
-#%>% filter(p.value > 0.05)
-
-
-sp_list_rare <- rarelist %>%
-  left_join(traits, by = "Plant_accepted_name") %>%
-  distinct(Plant_accepted_name, flw_shape_revised)
-
-# sp_list_rare$flw_shape_revised <- stringr::str_wrap(
-#   sp_list_rare$flw_shape_revised,
-#   width = 40
-# )
-
-# # 创建 flextable
-# ft <- flextable(sp_list_rare) %>%
-#   set_header_labels(
-#     Plant_accepted_name = "Plant species",
-#     flw_shape_revised = "Flower shape"
-#   ) %>%
-#   theme_booktabs() %>%
-#   fontsize(size = 11, part = "all") %>%
-#   italic(j = "Plant_accepted_name", part = "body") %>%
-#   width(j = "Plant_accepted_name", width = 3) %>%
-#   width(j = "flw_shape_revised", width = 5) %>%
-#   align(j = c("Plant_accepted_name", "flw_shape_revised"), align = "left")
-
-# ⭐按花型分组，把物种名拼接成一行（斜体在表格里再处理）
-sp_list_grouped <- sp_list_rare %>%
-  filter(!is.na(flw_shape_revised)) %>%
-  group_by(flw_shape_revised) %>%
-  summarise(
-    Plant_species = paste(sort(unique(Plant_accepted_name)), collapse = ", "),
-    .groups = "drop"
-  ) %>%
-  arrange(flw_shape_revised) %>%
-  mutate(Illustration = "") %>%               # ⭐留空列，方便后续手动插图
-  select(Illustration, flw_shape_revised, Plant_species)
-
-# 换行处理（如果花型名称或物种列表过长）
-sp_list_grouped$Plant_species <- stringr::str_wrap(sp_list_grouped$Plant_species, width = 60)
-
-# 创建 flextable
-ft <- flextable(sp_list_grouped) %>%
-  set_header_labels(
-    Illustration = "",
-    flw_shape_revised = "Flower shape",
-    Plant_species = "Plant species"
-  ) %>%
-  theme_booktabs() %>%
-  fontsize(size = 11, part = "all") %>%
-  italic(j = "Plant_species", part = "body") %>%
-  width(j = "Illustration", width = 1) %>%
-  width(j = "flw_shape_revised", width = 2.5) %>%
-  width(j = "Plant_species", width = 4.5) %>%
-  align(j = c("Illustration", "flw_shape_revised", "Plant_species"), align = "left")
-
-# 导出 Word
-# 导出 Word
-doc <- read_docx()
-doc <- body_add_flextable(doc, ft)
-print(doc, target = "./result_260526/sp_list_rare_new.docx")
 
 
 
-# network_group 有列: Study_Network_id, group (Present/Absent)
-attract_percent_10 <- percent_10 %>%
-  left_join(network_group %>% dplyr::select(Study_Network_id, present_group), by = "Study_Network_id")
-
-shapiro.test(attract_percent_10$percentage_Abun10[attract_percent_10$present_group=="Present"])
-shapiro.test(attract_percent_10$percentage_Abun10[attract_percent_10$present_group=="Absent"])
-
-wilcox.test(percentage_Abun10 ~ present_group, data = attract_percent_10)
 
 
 
-# 1️⃣ 分组
-attract_percent_10 <- attract_percent_10 %>%
-  mutate(
-    present_group = str_squish(present_group) %>% str_to_title(),
-    present_group = factor(present_group, levels = c("Present", "Absent"))
-  )
-
-# 2️⃣ Wilcoxon test
-wilcox_res <- wilcox.test(percentage_Abun10 ~ present_group, data = attract_percent_10)
-
-sig_label <- if(wilcox_res$p.value < 0.001) {
-  "***"
-} else if(wilcox_res$p.value < 0.01) {
-  "**"
-} else if(wilcox_res$p.value < 0.05) {
-  "*"
-} else {
-  "ns"
-}
-
-# 3️⃣ summary（n）
-data_summary <- attract_percent_10 %>%
-  group_by(present_group) %>%
-  summarise(
-    Mean_Percentage = mean(percentage_Abun10, na.rm = TRUE),
-    SD_Percentage = sd(percentage_Abun10, na.rm = TRUE),
-    n_non_missing = sum(!is.na(percentage_Abun10)),
-    .groups = "drop"
-  )
-
-group_colors <- c("Present" = "#E41A1C", "Absent" = "#377EB8")
-
-# 4️⃣ y 位置
-y_max <- max(attract_percent_10$percentage_Abun10, na.rm = TRUE)
-y_pos <- y_max * 1.1
-
-# =========================
-# 5️⃣ FINAL PLOT
-# =========================
-plot <- ggplot(attract_percent_10,
-               aes(x = present_group,
-                   y = percentage_Abun10,
-                   fill = present_group)) +
-  
-  geom_violin(trim = FALSE, alpha = 0.35, color = NA) +
-  geom_boxplot(width = 0.15, alpha = 0.6, outlier.shape = NA) +
-  geom_jitter(width = 0.15, size = 1.3, alpha = 0.4) +
-  
-  # mean
-  stat_summary(
-    fun = mean,
-    geom = "text",
-    aes(label = sprintf("%.1f%%", stat(y))),
-    vjust = -1,
-    position = position_nudge(x = -0.4)
-  ) +
-  
-  # n
-  geom_text(
-    data = data_summary,
-    aes(x = present_group,
-        y = Mean_Percentage + SD_Percentage,
-        label = paste0("n = ", n_non_missing)),
-    vjust = -0.5,
-    size = 4,
-    position = position_nudge(x = -0.4)
-  ) +
-  
-  
-  #号显著性（重点！）
-  geom_signif(
-    comparisons = list(c("Present", "Absent")),
-    annotations = sig_label,
-    y_position = y_pos,
-    tip_length = 0.01,
-    textsize = 6
-  ) +
-  
-  scale_fill_manual(values = group_colors) +
-  
-  labs(
-    x = "Presence of highly attractive plants in full network",
-    y = "Percent of pollinator richness captured (%)"
-  ) +
-  
-  theme_classic(base_size = 12) +
-  theme(
-    legend.position = "right",
-    axis.title = element_text(face = "bold"),
-    axis.text = element_text(color = "black"),
-    plot.margin = margin(5, 15, 5, 5)
-  )
-
-plot
-
-ggsave("./result_260526/rare_atract.png", plot, width = 6.5, height = 4, units = "in", dpi = 300)
-
-#########################################################################
-
-# 1️⃣ 汇总 + 直接生成论文格式列
-table2 <- attract_percent_10 %>%
-  group_by(present_group) %>%
-  summarise(
-    Mean = mean(percentage_Abun10, na.rm = TRUE),
-    SD = sd(percentage_Abun10, na.rm = TRUE),
-    n = sum(!is.na(percentage_Abun10)),
-    .groups = "drop"
-  ) %>%
-  
-  # ⭐ 合并 Mean ± SD（论文标准写法）
-  mutate(
-    `Richness captured (%)` = sprintf("%.2f ± %.2f", Mean, SD),
-    `P-value` = signif(wilcox_res$p.value, 3)
-  ) %>%
-  
-  # ⭐ 改列名（关键）
-  dplyr::select(
-    Group = present_group,
-    `Richness captured (%)`,
-    n,
-    `P-value`
-  )
-
-# 2️⃣ flextable 美化
-ft_table2 <- flextable(table2) %>%
-  theme_booktabs() %>%
-  autofit() %>%
-  fontsize(size = 10, part = "all") %>%
-  align(align = "center", part = "all") %>%
-  
-  # ⭐ 表头加粗
-  bold(part = "header") %>%
-  
-  # ⭐ Group 左对齐（更像论文）
-  align(j = "Group", align = "left", part = "all")
-
-# 3️⃣ Word 输出（优化标题）
-doc <- read_docx() %>%
-  body_add_par(
-    "Table 2. Comparison of pollinator richness captured by the top 10 abundant plants between networks with and without highly attractive plant species (Wilcoxon rank-sum test).",
-    style = "heading 2"
-  ) %>%
-  body_add_flextable(ft_table2)
-
-# 4️⃣ 保存
-print(doc, target = "./result_260526/Table2_Wilcoxon.docx")
-
-##########################################
 # 
 # # Supp abundance-richness in each network
 # # effect size forest plot

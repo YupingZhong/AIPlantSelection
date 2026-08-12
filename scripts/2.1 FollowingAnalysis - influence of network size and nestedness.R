@@ -135,7 +135,7 @@ plot_top10_relation <- function(metric_df, metric_name, metric_label) {
     ) +
     
     scale_color_manual(
-      values=setNames("#9E9AC8", metric_label)
+      values=setNames("#E9A77B", metric_label)
     )+
     
     scale_shape_manual(
@@ -170,95 +170,6 @@ plot_top10_relation <- function(metric_df, metric_name, metric_label) {
     legend.key.width = unit(1.5,"cm")
   )
 }
-
-
-
-# =========================
-
-# Table output
-
-# Abundant_Top10 回归分析
-
-# =========================
-
-doc <- read_docx()
-
-doc <- doc %>%
-  body_add_par(
-    "Abundant Top 10 Species Analysis",
-    style="heading 1"
-  ) %>%
-  body_add_par(
-    "This report presents the results of linear and robust regression models predicting abundant species capture.",
-    style="Normal"
-  )
-
-
-doc <- doc %>%
-  body_add_par(
-    paste0(
-      "Model diagnostics showed heteroscedasticity ",
-      "(Breusch-Pagan test: p < 0.001) and deviations ",
-      "from residual normality (Shapiro-Wilk test: p = 0.001). ",
-      "All predictors showed low multicollinearity ",
-      "(VIF < 2). Robust regression was therefore used ",
-      "for final inference."
-    ),
-    style="Normal"
-  )
-
-
-# flextable
-
-ft <- flextable(tidy_robust)
-
-ft <- set_header_labels(
-  ft,
-  Variable="Variable",
-  Estimate_SE="Estimate ± SE",
-  t="t",
-  P="p-value",
-  VIF="VIF"
-)
-
-
-ft <- ft %>%
-  align(
-    align="center",
-    part="all"
-  ) %>%
-  bold(
-    part="header"
-  ) %>%
-  font(
-    fontname="Times New Roman",
-    part="all"
-  ) %>%
-  fontsize(
-    size=10,
-    part="all"
-  ) %>%
-  theme_vanilla() %>%
-  autofit()
-
-
-
-doc <- doc %>%
-  body_add_flextable(ft) %>%
-  body_add_par(
-    "Table 1. Robust regression results: Predictors of Abundant Top 10 Species (%)",
-    style="Normal"
-  ) %>%
-  body_add_par(
-    "Note: SE = standard error; p-values are two-tailed; VIF values indicate multicollinearity diagnostics.",
-    style="Normal"
-  )
-
-
-print(
-  doc,
-  target="result_260526/Influence_factor_Top10_Report.docx"
-)
 
 ###############################################
 # -------------------- plot--------------------
@@ -422,6 +333,100 @@ ggsave(
   width = 6, height = 5.5,
   dpi = 300
 )
+
+
+
+
+
+# =========================
+
+# Table output
+
+# Abundant_Top10 回归分析
+
+# =========================
+
+doc <- read_docx()
+
+doc <- doc %>%
+  body_add_par(
+    "Abundant Top 10 Species Analysis",
+    style="heading 1"
+  ) %>%
+  body_add_par(
+    "This report presents the results of linear and robust regression models predicting abundant species capture.",
+    style="Normal"
+  )
+
+
+doc <- doc %>%
+  body_add_par(
+    paste0(
+      "Model diagnostics showed heteroscedasticity ",
+      "(Breusch-Pagan test: p < 0.001) and deviations ",
+      "from residual normality (Shapiro-Wilk test: p = 0.001). ",
+      "All predictors showed low multicollinearity ",
+      "(VIF < 2). Robust regression was therefore used ",
+      "for final inference."
+    ),
+    style="Normal"
+  )
+
+
+# flextable
+
+ft <- flextable(tidy_robust)
+
+ft <- set_header_labels(
+  ft,
+  Variable="Variable",
+  Estimate_SE="Estimate ± SE",
+  t="t",
+  P="p-value",
+  VIF="VIF"
+)
+
+
+ft <- ft %>%
+  align(
+    align="center",
+    part="all"
+  ) %>%
+  bold(
+    part="header"
+  ) %>%
+  font(
+    fontname="Times New Roman",
+    part="all"
+  ) %>%
+  fontsize(
+    size=10,
+    part="all"
+  ) %>%
+  theme_vanilla() %>%
+  autofit()
+
+
+
+doc <- doc %>%
+  body_add_flextable(ft) %>%
+  body_add_par(
+    "Table 1. Robust regression results: Predictors of Abundant Top 10 Species (%)",
+    style="Normal"
+  ) %>%
+  body_add_par(
+    "Note: SE = standard error; p-values are two-tailed; VIF values indicate multicollinearity diagnostics.",
+    style="Normal"
+  )
+
+
+print(
+  doc,
+  target="result_260526/Influence_factor_Top10_Report.docx"
+)
+
+
+
 
 #####################################
 # # for all strategies
