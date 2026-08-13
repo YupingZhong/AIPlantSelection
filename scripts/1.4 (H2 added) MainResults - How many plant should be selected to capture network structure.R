@@ -1473,13 +1473,13 @@ p_nodf <- ggplot() +
       x = n,
       y = rho_nodf
     ),
-    color = "#B84E22",
+    color = "#355A9A",
     size = 2
   ) +
   
   geom_vline(
     xintercept = plateau_nodf,
-    color = "#F5A88A",
+    color = "#355A9A",
     linewidth = 1.2,
     alpha = 0.8
   ) +
@@ -1500,7 +1500,7 @@ p_nodf <- ggplot() +
       "Abundant:\nn = ",
       plateau_nodf
     ),
-    color = "#B84E22",
+    color = "#355A9A",
     vjust = 1,
     hjust = -0.1,
     size = 3.5
@@ -1575,13 +1575,13 @@ p_conn <- ggplot() +
       x = n,
       y = rho_conn
     ),
-    color = "#355A9A",
+    color = "#B84E22",
     size = 2
   ) +
   
   geom_vline(
     xintercept = plateau_conn,
-    color = "#355A9A",
+    color = "#F5A88A",
     linewidth = 1.2,
     alpha = 0.8
   ) +
@@ -1602,7 +1602,7 @@ p_conn <- ggplot() +
       "Abundant:\nn = ",
       plateau_conn
     ),
-    color = "#355A9A",
+    color = "#B84E22",
     vjust = 1,
     hjust = -0.1,
     size = 3.5
@@ -1761,8 +1761,8 @@ p_H2
 # =============================================================================
 
 combined_plot_suf <- plot_grid(
-  p_nodf,
   p_conn,
+  p_nodf,
   p_H2,
   ncol = 3,
   align = "hv"

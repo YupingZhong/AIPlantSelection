@@ -374,16 +374,18 @@ print(doc, target = "./result_260526/Apidae_Network_Counts.docx")
 
 ###-------------2. How many pollinator to identify to capture most of the interaction in Europe
 ##(Implication for classifier training)
+## should we exclude honeybee?
 
 #======================================================================================
 
 library(ggplot2)
 library(dplyr)
 library(purrr)
+library(ggrepel)
 #read data
-metadata<-readRDS("Interaction_data_published.rds")%>%
+metadata<-readRDS("data/raw/Interaction_data_published.rds")%>%
   mutate(Study_Network_id = paste(Study_id, Network_id, sep = "_"))
-meta_count<-readRDS("Flower_counts_published.rds")%>%
+meta_count<-readRDS("data/raw/Flower_counts_published.rds")%>%
   mutate(Study_Network_id = paste(Study_id, Network_id, sep = "_"))
 #首先删除那些pollinator只鉴定到属和大类的记录
 Poll_sp<-unique(metadata$Pollinator_accepted_name)#2668 POLLINATORS 
@@ -511,61 +513,318 @@ target_x_A <- target_row_A$Rank
 target_y_A <- target_row_A$Cumulative_pct
 target_species_A <- target_row_A$Pollinator_accepted_name
 
-# 📊 绘制方案A的主图
-plot_A <- ggplot(pollinator_importance_A, aes(x = Rank, y = Cumulative_pct)) +
-  geom_point(size = 2, shape = 1, color = "#FFB300", alpha = 0.8) +
-  geom_line(size = 0.8, color = "#FFB300", alpha = 0.7) +
-  geom_smooth(method = "loess", se = TRUE, linetype = "solid",
-              fill = "#3498DB", color = "#3498DB", alpha = 0.15, size = 0.6) +
+top5_pollinators <- pollinator_importance_A %>%
+  slice_head(n = 5)
+# ==============================================================================
+# Top 5 pollinators for annotation
+# ==============================================================================
+
+top5_pollinators <- pollinator_importance_A %>%
+  slice_head(n = 5) %>%
+  mutate(
+    label = paste0(
+      "italic('",
+      Pollinator_accepted_name,
+      "')"
+    )
+  )
+# ==============================================================================
+# PANEL A
+# Number of pollinators needed to capture most interactions
+# ==============================================================================
+
+p_capture <- ggplot(
   
-  # 参考线
-  geom_vline(xintercept = target_x_A, linetype = "dashed", 
-             color = "#66C2A5", size = 1, alpha = 0.7) +
-  geom_hline(yintercept = target_y_A, linetype = "dashed", 
-             color = "#66C2A5", size = 1, alpha = 0.7) +
+  pollinator_importance_A,
   
-  # 注释
-  annotate("text",
-           x = target_x_A, y = target_y_A,
-           label = paste0(target_pct_A, "% captured\n", 
-                          target_x_A, " species needed\n(",
-                          sprintf("%.1f%%", (target_x_A/nrow(pollinator_importance_A))*100), 
-                          " of total)"),
-           color = "#66C2A5", fontface = "bold",
-           hjust = -0.1, vjust = 1.5, size = 4.5,
-           bbox = list(boxcolour = "white", alpha = 0.9)) +
+  aes(
+    x = Rank,
+    y = Cumulative_pct
+  )
   
-  labs(
-    #title = "Scheme A: Mean Relative Abundance Across Networks",
-    #subtitle = "Crop-dominated sites excluded; Zero interactions included",
-    x = "Species Rank (sorted by mean relative interactions)",
-    y = "Cumulative Relative Interactions (%)"
+) +
+  
+  # ----------------------------------------------------------------------------
+# Cumulative interaction curve
+# ----------------------------------------------------------------------------
+
+geom_line(
+  
+  linewidth = 0.9,
+  
+  color =
+    richness_colors["Pollinator richness"],
+  
+  alpha = 0.85
+  
+) +
+  
+  geom_point(
+    
+    shape = 16,
+    
+    size = 2.0,
+    
+    alpha = 0.65,
+    
+    color =
+      richness_colors["Pollinator richness"]
+    
   ) +
-  scale_y_continuous(limits = c(0, 105), breaks = seq(0, 100, 10)) +
-  theme_bw(base_size = 12) +
+  
+  # ----------------------------------------------------------------------------
+# Highlight Top 5 species
+# ----------------------------------------------------------------------------
+
+geom_point(
+  
+  data =
+    top5_pollinators,
+  
+  shape = 16,
+  
+  size = 3.0,
+  
+  color =
+    nestedness_color
+  
+) +
+  
+  # ----------------------------------------------------------------------------
+# Top 5 species labels
+# ----------------------------------------------------------------------------
+
+geom_text_repel(
+  
+  data = top5_pollinators,
+  
+  aes(
+    label = label
+  ),
+  
+  parse = TRUE,
+  
+  size = 3.8,
+  
+  color = "black",
+  
+  box.padding = 0.4,
+  
+  point.padding = 0.3,
+  
+  force = 1,
+  
+  min.segment.length = 0,
+  
+  segment.color = "grey50",
+  
+  direction = "y",
+  
+  seed = 123
+  
+)+
+  
+  # ----------------------------------------------------------------------------
+# 95% reference lines
+# ----------------------------------------------------------------------------
+
+geom_vline(
+  
+  xintercept =
+    target_x_A,
+  
+  linetype =
+    "dashed",
+  
+  linewidth =
+    0.8,
+  
+  color =
+    nestedness_color,
+  
+  alpha =
+    0.75
+  
+) +
+  
+  geom_hline(
+    
+    yintercept =
+      target_pct_A,
+    
+    linetype =
+      "dashed",
+    
+    linewidth =
+      0.8,
+    
+    color =
+      nestedness_color,
+    
+    alpha =
+      0.75
+    
+  ) +
+  
+  # ----------------------------------------------------------------------------
+# 95% annotation
+# ----------------------------------------------------------------------------
+
+annotate(
+  
+  "text",
+  
+  x =
+    target_x_A +
+    0.03 * max(pollinator_importance_A$Rank),
+  
+  y =
+    85,
+  
+  label =
+    paste0(
+      target_pct_A,
+      "% captured\n",
+      target_x_A,
+      " species (",
+      sprintf(
+        "%.1f%%",
+        target_x_A /
+          nrow(pollinator_importance_A) *
+          100
+      ),
+      " of total)"
+    ),
+  
+  size =
+    4.0,
+  
+  fontface =
+    "plain",
+  
+  color =
+    nestedness_color,
+  
+  hjust =
+    0,
+  
+  vjust =
+    0.5
+  
+) +
+  
+  # ----------------------------------------------------------------------------
+# X-axis
+# ----------------------------------------------------------------------------
+
+scale_x_continuous(
+  
+  expand =
+    expansion(
+      mult = c(
+        0.01,
+        0.02
+      )
+    )
+  
+) +
+  
+  # ----------------------------------------------------------------------------
+# Y-axis
+# ----------------------------------------------------------------------------
+
+scale_y_continuous(
+  
+  limits =
+    common_ylim,
+  
+  breaks =
+    common_breaks,
+  
+  expand =
+    expansion(
+      mult = c(
+        0,
+        0.02
+      )
+    )
+  
+) +
+  
+  # ----------------------------------------------------------------------------
+# Labels
+# ----------------------------------------------------------------------------
+
+labs(
+  
+  x =
+    "Pollinator species identified",
+  
+  y =
+    "Cumulative relative interactions (%)"
+  
+) +
+  
+  # ----------------------------------------------------------------------------
+# Theme
+# ----------------------------------------------------------------------------
+
+theme_classic(
+  
+  base_size = 12
+  
+) +
+  
   theme(
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 13),
-    plot.subtitle = element_text(hjust = 0.5, size = 10, color = "gray50"),
-    axis.title = element_text(face = "bold"),
-    #panel.grid.major = element_line(color = "gray90", size = 0.3),
-    panel.background = element_blank(),
-    panel.grid = element_blank()
+    
+    axis.title.x =
+      element_text(
+        face = "plain",
+        size = 13
+      ),
+    
+    axis.title.y =
+      element_text(
+        face = "plain",
+        size = 13
+      ),
+    
+    axis.text.x =
+      element_text(
+        color = "black",
+        size = 11
+      ),
+    
+    axis.text.y =
+      element_text(
+        color = "black",
+        size = 11
+      ),
+    
+    legend.position =
+      "none",
+    
+    plot.margin =
+      margin(
+        5,
+        5,
+        5,
+        5
+      )
+    
   )
 
-print(plot_A)
+print(p_capture)
 
 
-cat("\n========== 🔴 方案A 结果 ==========\n")
-cat(sprintf("总物种数: %d\n", nrow(pollinator_importance_A)))
-cat(sprintf("捕获 %d%% 平均相对丰度需要: %d 个物种 (%0.1f%%)\n", 
-            target_pct_A, target_x_A, (target_x_A/nrow(pollinator_importance_A))*100))
-cat(sprintf("该物种为: %s\n\n", target_species_A))
-cat("前15个最重要物种：\n")
-print(pollinator_importance_A %>% 
-        slice(1:15) %>%
-        select(Rank, Pollinator_accepted_name, Mean_relative_abundance, 
-               n_networks_present, Cumulative_pct))
-
+ggsave(
+  "/Chap1_TargetPlant_to_monitor/result_260723/Pollinator_importance_curve.png",
+  p_capture,
+  width = 5,
+  height = 4,
+  units = "in",
+  dpi = 600
+)
 
 #======================================================================================
 # 🟢 分目展示：用方案A（推荐）
@@ -847,7 +1106,7 @@ pollinator_top_with_genus <- pollinator_inter_times %>%
   ) %>%
   # ⭐ 按目、科、交互次数排序
   arrange(Pollinator_order, Pollinator_family, desc(Total_Interaction)) %>%
-  select(
+  dplyr::select(
     Pollinator_order,
     Pollinator_family,
     Pollinator_accepted_name,
