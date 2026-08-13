@@ -146,26 +146,38 @@ shape_class <- ggplot(
   shape_class_freq,
   aes(
     x = factor(flw_shape_revised, levels = shape_order),
-    y = network_number,
-    fill = "white")) +
-  geom_col(color = "black") +
-  labs(
-    x = "Floral morphology",
-    y = "Number of Networks") +
-  scale_fill_identity() +
+    y = network_number
+  )
+) +
+  geom_col(
+    width = 0.8,
+    fill = "white",
+    color = "black",
+    linewidth = 0.35
+  ) +
   coord_flip() +
-  theme_classic(base_size = 12) +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  labs(
+    x = NULL,
+    y = "Number of networks"
+  ) +
+  theme_classic(base_size = 10) +
   theme(
-    axis.title = element_text(face = "bold", size = 15),
-    axis.text = element_text(color = "black", size = 13),
-    legend.title = element_text(face = "bold", size = 11),
-    legend.text = element_text(size = 10),
-    legend.position = "right",
-    panel.background = element_blank(),
-    panel.grid = element_blank(),
-    plot.margin = margin(5, 15, 5, 5))
+    axis.title.x = element_text(face = "bold", size = 11),
+    axis.text.y = element_text(color = "black", size = 9),
+    axis.text.x = element_text(color = "black", size = 8),
+    plot.margin = margin(3, 5, 3, 3)
+  )
 
 shape_class
+
+ggsave(
+  "/Chap1_TargetPlant_to_monitor/result_260723/flower_shape_network_number.png",
+  shape_class,
+  width=2.8, height=3.0, dpi=600, bg="white"
+)
 #ggsave("/Chap1_TargetPlant_to_monitor/result_260526/shape_class.png", shape_class, width = 4, 
 #       height = 4, units = "in", dpi = 300)  
 
