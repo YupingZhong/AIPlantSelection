@@ -25,7 +25,7 @@ library(vegan)
 data_count_scaled <- readRDS("data/processed/data_count_scaled_published.rds")
 data_interact <- readRDS("data/processed/data_interact_published.rds")
 unique(data_count_scaled$Study_Network_id)
-colnames(data_count_scaled)
+colnames(data_interact)
 
 unique(data_interact$Pollinator_rank)
 # [1] "Hymenoptera"  "Diptera"      "Coleoptera"(26site)   "Lepidoptera"  
@@ -233,34 +233,34 @@ percent_3 <- merged_data3 %>%
 
 ########################################################################
 #proportion of the unique interaction captured
-unic_inter <- function(subset_data, full_data) {
-  
-  subset_n <- subset_data %>%
-    ungroup() %>%
-    distinct(
-      Study_Network_id,
-      Plant_accepted_name,
-      Pollinator_accepted_name
-    ) %>%
-    count(Study_Network_id, name = "n_subset")
-  
-  full_n <- full_data %>%
-    ungroup() %>%
-    distinct(
-      Study_Network_id,
-      Plant_accepted_name,
-      Pollinator_accepted_name
-    ) %>%
-    count(Study_Network_id, name = "n_total")
-  
-  subset_n %>%
-    left_join(full_n, by = "Study_Network_id") %>%
-    mutate(prop_interactions = n_subset / n_total)
-}
-
-cov_10 <- unic_inter(result10, data_interact)
-cov_5  <- unic_inter(result5, data_interact)
-cov_3  <- unic_inter(result3, data_interact)
+# unic_inter <- function(subset_data, full_data) {
+#   
+#   subset_n <- subset_data %>%
+#     ungroup() %>%
+#     distinct(
+#       Study_Network_id,
+#       Plant_accepted_name,
+#       Pollinator_accepted_name
+#     ) %>%
+#     count(Study_Network_id, name = "n_subset")
+#   
+#   full_n <- full_data %>%
+#     ungroup() %>%
+#     distinct(
+#       Study_Network_id,
+#       Plant_accepted_name,
+#       Pollinator_accepted_name
+#     ) %>%
+#     count(Study_Network_id, name = "n_total")
+#   
+#   subset_n %>%
+#     left_join(full_n, by = "Study_Network_id") %>%
+#     mutate(prop_interactions = n_subset / n_total)
+# }
+# 
+# cov_10 <- unic_inter(result10, data_interact)
+# cov_5  <- unic_inter(result5, data_interact)
+# cov_3  <- unic_inter(result3, data_interact)
 # 
 # colnames(cov_10)[colnames(cov_10) == "prop_interactions"] <- "Abundant_Top10"
 # colnames(cov_5)[colnames(cov_5) == "prop_interactions"] <- "Abundant_Top5"
@@ -396,17 +396,17 @@ head(op2_percent_shape_top5)
 
 
 
-#######################
-
-#------unique interactions
-
-######################
-head(abun_species_top3_merge)
-cov_floral_5  <- unic_inter(abun_species_top5_merge, data_interact)
-cov_floral_3  <- unic_inter(abun_species_top3_merge, data_interact)
-
-colnames(cov_floral_5)[colnames(cov_floral_5) == "prop_interactions"] <- "FlwShape_Top5"
-colnames(cov_floral_3)[colnames(cov_floral_3) == "prop_interactions"] <- "FlwShape_Top3"
+# #######################
+# 
+# #------unique interactions
+# 
+# ######################
+# head(abun_species_top3_merge)
+# cov_floral_5  <- unic_inter(abun_species_top5_merge, data_interact)
+# cov_floral_3  <- unic_inter(abun_species_top3_merge, data_interact)
+# 
+# colnames(cov_floral_5)[colnames(cov_floral_5) == "prop_interactions"] <- "FlwShape_Top5"
+# colnames(cov_floral_3)[colnames(cov_floral_3) == "prop_interactions"] <- "FlwShape_Top3"
 
 
 
@@ -704,49 +704,49 @@ result_PD3 <- left_join(
   )
 )
 
-######interaction coverage
-PD_cov10 <- unic_inter(
-  left_join(
-    PD_selected$PD_top10,
-    data_interact,
-    by=c(
-      "Plant_species"="Plant_original_name",
-      "Study_Network_id"="Study_Network_id"
-    )
-  ),
-  data_interact
-)
-
-
-PD_cov5 <- unic_inter(
-  left_join(
-    PD_selected$PD_top5,
-    data_interact,
-    by=c(
-      "Plant_species"="Plant_original_name",
-      "Study_Network_id"="Study_Network_id"
-    )
-  ),
-  data_interact
-)
-
-
-PD_cov3 <- unic_inter(
-  left_join(
-    PD_selected$PD_top3,
-    data_interact,
-    by=c(
-      "Plant_species"="Plant_original_name",
-      "Study_Network_id"="Study_Network_id"
-    )
-  ),
-  data_interact
-)
-
-
-colnames(PD_cov10)[4] <- "Phylo_Top10"
-colnames(PD_cov5)[4]  <- "Phylo_Top5"
-colnames(PD_cov3)[4]  <- "Phylo_Top3"
+# ######interaction coverage
+# PD_cov10 <- unic_inter(
+#   left_join(
+#     PD_selected$PD_top10,
+#     data_interact,
+#     by=c(
+#       "Plant_species"="Plant_original_name",
+#       "Study_Network_id"="Study_Network_id"
+#     )
+#   ),
+#   data_interact
+# )
+# 
+# 
+# PD_cov5 <- unic_inter(
+#   left_join(
+#     PD_selected$PD_top5,
+#     data_interact,
+#     by=c(
+#       "Plant_species"="Plant_original_name",
+#       "Study_Network_id"="Study_Network_id"
+#     )
+#   ),
+#   data_interact
+# )
+# 
+# 
+# PD_cov3 <- unic_inter(
+#   left_join(
+#     PD_selected$PD_top3,
+#     data_interact,
+#     by=c(
+#       "Plant_species"="Plant_original_name",
+#       "Study_Network_id"="Study_Network_id"
+#     )
+#   ),
+#   data_interact
+# )
+# 
+# 
+# colnames(PD_cov10)[4] <- "Phylo_Top10"
+# colnames(PD_cov5)[4]  <- "Phylo_Top5"
+# colnames(PD_cov3)[4]  <- "Phylo_Top3"
 
 
 ###################################################################
@@ -876,94 +876,94 @@ random_3 <- merged_random3 %>%
   )
 unique(random_3$Study_Network_id)
 
-## unique interaction coverage
-# main function (ONLY interactions)
-#========================
-get_interaction_metrics <- function(n_sp){
-  
-  # sample plants
-  random_sp <- plant_pool %>%
-    group_by(Study_Network_id) %>%
-    group_modify(~ {
-      
-      df <- .x
-      n_select <- min(n_sp, nrow(df))
-      
-      slice_sample(df, n = n_select)
-    }) %>%
-    ungroup()
-  
-  # subset interactions
-  sampled_data <- plant_pollinator %>%
-    inner_join(
-      random_sp,
-      by = c("Study_Network_id",
-             "Plant_original_name" = "Plant_species")
-    ) %>%
-    distinct(
-      Study_Network_id,
-      Plant_original_name,
-      Pollinator_accepted_name
-    )
-  
-  # interaction richness per network
-  subset_metrics <- sampled_data %>%
-    group_by(Study_Network_id) %>%
-    summarise(
-      interaction_richness = n(),
-      .groups = "drop"
-    )
-  
-  # full network baseline
-  full_metrics <- plant_pollinator %>%
-    distinct(
-      Study_Network_id,
-      Plant_original_name,
-      Pollinator_accepted_name
-    ) %>%
-    group_by(Study_Network_id) %>%
-    summarise(
-      total_interactions = n(),
-      .groups = "drop"
-    )
-  
-  # merge + coverage
-  tibble(Study_Network_id = unique(plant_pool$Study_Network_id)) %>%
-    left_join(subset_metrics, by = "Study_Network_id") %>%
-    left_join(full_metrics, by = "Study_Network_id") %>%
-    mutate(
-      interaction_richness = ifelse(is.na(interaction_richness), 0, interaction_richness),
-      interaction_coverage = interaction_richness / total_interactions
-    )
-}
-
-#========================
-#replicate function
-#========================
-run_rep <- function(n_sp, n_rep = 1000){
-  
-  replicate(n_rep, get_interaction_metrics(n_sp), simplify = FALSE) %>%
-    bind_rows()
-}
-
-#========================
-# Step 4: run scenarios
-#========================
-
-cov_random_10 <- run_rep(10)
-cov_random_5  <- run_rep(5)
-cov_random_3  <- run_rep(3)
-colnames(cov_random_10)[colnames(cov_random_10) == "interaction_coverage"] <- "Random_10"
-colnames(cov_random_5)[colnames(cov_random_5) == "interaction_coverage"] <- "Random_5"
-colnames(cov_random_3)[colnames(cov_random_3) == "interaction_coverage"] <- "Random_3"
-
-saveRDS(cov_random_10,"cov_random_10.rds")
-saveRDS(cov_random_5,"cov_random_5.rds")
-saveRDS(cov_random_3,"cov_random_3.rds")
-
-cov_random_10<-readRDS("cov_random_10.rds")
-cov_random_5<-readRDS("cov_random_5.rds")
-cov_random_3<-readRDS("cov_random_3.rds")
+# ## unique interaction coverage
+# # main function (ONLY interactions)
+# #========================
+# get_interaction_metrics <- function(n_sp){
+#   
+#   # sample plants
+#   random_sp <- plant_pool %>%
+#     group_by(Study_Network_id) %>%
+#     group_modify(~ {
+#       
+#       df <- .x
+#       n_select <- min(n_sp, nrow(df))
+#       
+#       slice_sample(df, n = n_select)
+#     }) %>%
+#     ungroup()
+#   
+#   # subset interactions
+#   sampled_data <- plant_pollinator %>%
+#     inner_join(
+#       random_sp,
+#       by = c("Study_Network_id",
+#              "Plant_original_name" = "Plant_species")
+#     ) %>%
+#     distinct(
+#       Study_Network_id,
+#       Plant_original_name,
+#       Pollinator_accepted_name
+#     )
+#   
+#   # interaction richness per network
+#   subset_metrics <- sampled_data %>%
+#     group_by(Study_Network_id) %>%
+#     summarise(
+#       interaction_richness = n(),
+#       .groups = "drop"
+#     )
+#   
+#   # full network baseline
+#   full_metrics <- plant_pollinator %>%
+#     distinct(
+#       Study_Network_id,
+#       Plant_original_name,
+#       Pollinator_accepted_name
+#     ) %>%
+#     group_by(Study_Network_id) %>%
+#     summarise(
+#       total_interactions = n(),
+#       .groups = "drop"
+#     )
+#   
+#   # merge + coverage
+#   tibble(Study_Network_id = unique(plant_pool$Study_Network_id)) %>%
+#     left_join(subset_metrics, by = "Study_Network_id") %>%
+#     left_join(full_metrics, by = "Study_Network_id") %>%
+#     mutate(
+#       interaction_richness = ifelse(is.na(interaction_richness), 0, interaction_richness),
+#       interaction_coverage = interaction_richness / total_interactions
+#     )
+# }
+# 
+# #========================
+# #replicate function
+# #========================
+# run_rep <- function(n_sp, n_rep = 1000){
+#   
+#   replicate(n_rep, get_interaction_metrics(n_sp), simplify = FALSE) %>%
+#     bind_rows()
+# }
+# 
+# #========================
+# # Step 4: run scenarios
+# #========================
+# 
+# cov_random_10 <- run_rep(10)
+# cov_random_5  <- run_rep(5)
+# cov_random_3  <- run_rep(3)
+# colnames(cov_random_10)[colnames(cov_random_10) == "interaction_coverage"] <- "Random_10"
+# colnames(cov_random_5)[colnames(cov_random_5) == "interaction_coverage"] <- "Random_5"
+# colnames(cov_random_3)[colnames(cov_random_3) == "interaction_coverage"] <- "Random_3"
+# 
+# saveRDS(cov_random_10,"cov_random_10.rds")
+# saveRDS(cov_random_5,"cov_random_5.rds")
+# saveRDS(cov_random_3,"cov_random_3.rds")
+# 
+# cov_random_10<-readRDS("cov_random_10.rds")
+# cov_random_5<-readRDS("cov_random_5.rds")
+# cov_random_3<-readRDS("cov_random_3.rds")
 #######
 library(dplyr)
 library(purrr)

@@ -18,13 +18,14 @@
 #   Abundance vs Phylogenetic
 #   Abundance + shape vs Abundance
 #######################################################################
-
 library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(viridis)
 library(scales)
 library(ggpubr)
+library(flextable)
+library(officer)
 
 
 # ==========================================================
@@ -123,12 +124,15 @@ plot_data <- result_all %>%
     # Sampling effort
     # ------------------------------------------------------
     
-    Plant_Number = case_when(
+    Plant_Number = factor(
+      case_when(
       grepl("10$", Option) ~ "Top10",
       grepl("5$", Option) ~ "Top5",
       grepl("3$", Option) ~ "Top3"
-    ) 
-  )%>%
+    ),
+    levels = c("Top10", "Top5", "Top3")
+  )
+)%>%
   
   # --------------------------------------------------------
 # Remove abundance + shape from Top10
@@ -157,6 +161,7 @@ left_join(
 
 plot_data <- plot_data %>%
   mutate(
+    
     Strategy = factor(
       Strategy,
       levels = c(
@@ -168,15 +173,19 @@ plot_data <- plot_data %>%
     ),
     
     Plant_Number = factor(
-      Plant_Number,
-      levels = c(
-        "Top10",
-        "Top5",
-        "Top3"
-      )
+      case_when(
+        grepl("10$", Option) ~ "Top10",
+        grepl("5$", Option) ~ "Top5",
+        grepl("3$", Option) ~ "Top3"
+      ),
+      levels = c("Top10", "Top5", "Top3")
     )
   )
 
+
+
+# Check
+print(levels(plot_data$Plant_Number))
 
 
 # ==========================================================
@@ -390,6 +399,10 @@ sig_results <- bind_rows(
   sig_results
 )
 
+sig_results$Plant_Number <- factor(
+  sig_results$Plant_Number,
+  levels = c("Top10", "Top5", "Top3")
+)
 
 # ==========================================================
 # Define comparison groups
@@ -634,18 +647,16 @@ geom_point(
   size = 4
 ) +
   
-  
+
   # ========================================================
 # Sampling-effort panels
 # ========================================================
 
-facet_wrap(
-  ~ Plant_Number,
-  nrow = 1,
-  ncol = 3,
+facet_grid(
+  . ~ Plant_Number,
   scales = "free_x",
-  drop = FALSE
-) +
+  space = "free_x"
+)  +
   
   
   # ========================================================
@@ -857,12 +868,6 @@ stat_pvalue_manual(
 
 plot_violin_size
 
-plot_data %>%
-  group_by(Plant_Number) %>%
-  summarise(
-    n_sample = n_distinct(Study_Network_id),
-    .groups = "drop"
-  )
 
 ggsave(
   "/Chap1_TargetPlant_to_monitor/result_260723/main_violin_network_size.png",
@@ -871,5 +876,365 @@ ggsave(
   height = 6,
   units = "in",
   dpi = 300
+)
+
+# ==========================================================
+# Supplementary Table S1
+# Pairwise Wilcoxon comparisons among subsampling strategies
+# ==========================================================
+
+
+# ==========================================================
+# 1. Prepare paired comparison data
+# ==========================================================
+
+table_data <- result_all %>%
+  dplyr::select(
+    Study_Network_id,
+    
+    # Abundance
+    Top10_Abundance = percentage_Abun10,
+    Top5_Abundance  = percentage_Abun5,
+    Top3_Abundance  = percentage_Abun3,
+    
+    # Abundance + flower shape
+    Top5_Shape = percentage_FlwShape5,
+    Top3_Shape = percentage_FlwShape3,
+    
+    # Phylogenetic
+    Top10_Phylo = percentage_Pylo10,
+    Top5_Phylo  = percentage_Pylo5,
+    Top3_Phylo  = percentage_Pylo3,
+    
+    # Random
+    Random10 = random_mean_percentage_Random10,
+    Random5  = random_mean_percentage_Random5,
+    Random3  = random_mean_percentage_Random3
+  )
+
+
+# ==========================================================
+# 2. Function for paired Wilcoxon comparison
+# ==========================================================
+
+run_table_test <- function(
+    data,
+    var1,
+    var2,
+    comparison
+) {
+  
+  x <- data[[var1]]
+  y <- data[[var2]]
+  
+  valid <- !is.na(x) & !is.na(y)
+  
+  x <- x[valid]
+  y <- y[valid]
+  
+  n <- length(x)
+  
+  if (n < 3) {
+    
+    return(
+      tibble(
+        Comparison = comparison,
+        n = n,
+        Median1 = NA_real_,
+        Median2 = NA_real_,
+        P_value = NA_real_
+      )
+    )
+    
+  }
+  
+  test <- wilcox.test(
+    x,
+    y,
+    paired = TRUE,
+    exact = FALSE
+  )
+  
+  tibble(
+    Comparison = comparison,
+    n = n,
+    Median1 = median(x, na.rm = TRUE),
+    Median2 = median(y, na.rm = TRUE),
+    P_value = test$p.value
+  )
+}
+
+
+# ==========================================================
+# 3. Run all Table S1 comparisons
+# ==========================================================
+
+table_s1 <- bind_rows(
+  
+  # --------------------------------------------------------
+  # Within-strategy comparisons
+  # --------------------------------------------------------
+  
+  run_table_test(
+    table_data,
+    "Top10_Abundance",
+    "Top5_Abundance",
+    "Top 10 abundant vs Top 5 abundant"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Top5_Abundance",
+    "Top3_Abundance",
+    "Top 5 abundant vs Top 3 abundant"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Top5_Shape",
+    "Top3_Shape",
+    "Top 5 flower-shape vs Top 3 flower-shape"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Random10",
+    "Random5",
+    "Random 10 vs Random 5"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Random5",
+    "Random3",
+    "Random 5 vs Random 3"
+  ),
+  
+  # --------------------------------------------------------
+  # Abundance vs Random
+  # --------------------------------------------------------
+  
+  run_table_test(
+    table_data,
+    "Top10_Abundance",
+    "Random10",
+    "Top 10 abundant vs Random 10"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Top5_Abundance",
+    "Random5",
+    "Top 5 abundant vs Random 5"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Top3_Abundance",
+    "Random3",
+    "Top 3 abundant vs Random 3"
+  ),
+  
+  # --------------------------------------------------------
+  # Flower shape vs Random
+  # --------------------------------------------------------
+  
+  run_table_test(
+    table_data,
+    "Top5_Shape",
+    "Random5",
+    "Top 5 flower-shape vs Random 5"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Top3_Shape",
+    "Random3",
+    "Top 3 flower-shape vs Random 3"
+  ),
+  
+  # --------------------------------------------------------
+  # Abundance vs Abundance + flower shape
+  # --------------------------------------------------------
+  
+  run_table_test(
+    table_data,
+    "Top5_Abundance",
+    "Top5_Shape",
+    "Top 5 abundant vs Top 5 flower-shape"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Top3_Abundance",
+    "Top3_Shape",
+    "Top 3 abundant vs Top 3 flower-shape"
+  )
+)
+
+
+# ==========================================================
+# 4. Format P-values
+# ==========================================================
+
+table_s1 <- table_s1 %>%
+  mutate(
+    
+    `Median1` = round(
+      Median1,
+      2
+    ),
+    
+    `Median2` = round(
+      Median2,
+      2
+    ),
+    
+    `P-value` = case_when(
+      
+      is.na(P_value) ~
+        "NA",
+      
+      P_value < 0.001 ~
+        "<0.001",
+      
+      TRUE ~
+        format.pval(
+          P_value,
+          digits = 3,
+          eps = 0.001
+        )
+    )
+  ) %>%
+  select(
+    Comparison,
+    n,
+    Median1,
+    Median2,
+    `P-value`
+  )
+
+
+# ==========================================================
+# 5. Print table in R
+# ==========================================================
+
+print(table_s1)
+
+
+# ==========================================================
+# 6. Export CSV
+# ==========================================================
+
+write.csv(
+  table_s1,
+  "/Chap1_TargetPlant_to_monitor/result_260723/Table_S1_Pairwise_Wilcoxon.csv",
+  row.names = FALSE
+)
+
+
+# ==========================================================
+# 7. Create Word table
+# ==========================================================
+
+ft_table_s1 <- flextable(
+  table_s1
+) %>%
+  
+  set_header_labels(
+    Comparison = "Comparison",
+    n = "n",
+    Median1 = "Median1",
+    Median2 = "Median2",
+    `P-value` = "P-value"
+  ) %>%
+  
+  theme_booktabs() %>%
+  
+  fontsize(
+    size = 10,
+    part = "all"
+  ) %>%
+  
+  bold(
+    part = "header"
+  ) %>%
+  
+  align(
+    j = "Comparison",
+    align = "left",
+    part = "all"
+  ) %>%
+  
+  align(
+    j = c(
+      "n",
+      "Median1",
+      "Median2",
+      "P-value"
+    ),
+    align = "center",
+    part = "all"
+  ) %>%
+  
+  width(
+    j = "Comparison",
+    width = 3.8
+  ) %>%
+  
+  width(
+    j = "n",
+    width = 0.8
+  ) %>%
+  
+  width(
+    j = "Median1",
+    width = 1.2
+  ) %>%
+  
+  width(
+    j = "Median2",
+    width = 1.2
+  ) %>%
+  
+  width(
+    j = "P-value",
+    width = 1.2
+  )
+
+
+# ==========================================================
+# 8. Create Word document
+# ==========================================================
+
+doc_table_s1 <- read_docx() %>%
+  
+  body_add_par(
+    "Table S1",
+    style = "heading 2"
+  ) %>%
+  
+  body_add_par(
+    paste0(
+      "Pairwise statistical comparisons among subsampling ",
+      "strategies using paired Wilcoxon signed-rank tests. ",
+      "Sample sizes and medians of each subsampling strategy ",
+      "being compared are given, as well as p-values."
+    )
+  ) %>%
+  
+  body_add_flextable(
+    ft_table_s1
+  )
+
+
+# ==========================================================
+# 9. Save Word document
+# ==========================================================
+
+print(
+  doc_table_s1,
+  target =
+    "/Chap1_TargetPlant_to_monitor/result_260723/Table_S1_Pairwise_Wilcoxon.docx"
 )
 
