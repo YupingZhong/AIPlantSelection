@@ -1,6 +1,5 @@
 #  Supplement richness captured across order
 
-
 library(ggplot2)
 library(dplyr)
 library(tidyr)
@@ -12,7 +11,7 @@ library(ggpubr)
 # Load corrected results
 # ==========================================================
 
-result_all_order <- readRDS("data/processed/result_all_by_pollinator_order.rds"  )
+result_all_order <- readRDS("data/processed/result_all_by_pollinator_order.rds")
 
 
 # ==========================================================
@@ -27,7 +26,7 @@ network_size <- data_count_scaled %>%
   )
 
 # ==========================================================
-# Prepare plotting data
+# Prepare plotting data - CRITICAL: Set factor levels early
 # ==========================================================
 
 plot_data <- result_all_order %>%
@@ -47,29 +46,34 @@ plot_data <- result_all_order %>%
         "Random"
     ),
     
+    # 立即转为因子并设置顺序
+    Strategy = factor(
+      Strategy,
+      levels = c(
+        "Flower abundance",
+        "Flower abundance + shapes",
+        "Phylogenetic distance",
+        "Random"
+      )
+    ),
+    
     Plant_Number = factor(
       paste0("Top", n_plants),
-      levels = c(
-        "Top10",
-        "Top5",
-        "Top3"
-      )
+      levels = c("Top10", "Top5", "Top3")
     ),
     
     pollinator_order = factor(
       pollinator_order,
       levels = c(
-        "Lepidoptera",
-        "Coleoptera",
         "Diptera",
-        "Hymenoptera"
+        "Hymenoptera",
+        "Lepidoptera",
+        "Coleoptera"
       )
     )
   ) %>%
   
-  filter(
-    !is.na(percentage)
-  ) %>%
+  filter(!is.na(percentage)) %>%
   
   # Flower shape has no Top10
   filter(
@@ -79,11 +83,19 @@ plot_data <- result_all_order %>%
     )
   ) %>%
   
-  left_join(
-    network_size,
-    by = "Study_Network_id"
-  )
+  left_join(network_size, by = "Study_Network_id")
 
+
+# 验证因子顺序
+print("Plant_Number levels:")
+print(levels(plot_data$Plant_Number))
+print("pollinator_order levels:")
+print(levels(plot_data$pollinator_order))
+
+
+# ==========================================================
+# Calculate summary statistics
+# ==========================================================
 
 plot_summary <- plot_data %>%
   group_by(
@@ -92,20 +104,29 @@ plot_summary <- plot_data %>%
     Strategy
   ) %>%
   summarise(
-    mean = mean(
-      percentage,
-      na.rm = TRUE
-    ),
-    
-    median = median(
-      percentage,
-      na.rm = TRUE
-    ),
-    
+    mean = mean(percentage, na.rm = TRUE),
+    median = median(percentage, na.rm = TRUE),
     n = n(),
-    
     .groups = "drop"
+  ) %>%
+  # 重新确保因子顺序
+  mutate(
+    Strategy = factor(Strategy, 
+                      levels = c("Flower abundance", 
+                                 "Flower abundance + shapes",
+                                 "Phylogenetic distance", 
+                                 "Random")),
+    Plant_Number = factor(Plant_Number, 
+                          levels = c("Top10", "Top5", "Top3")),
+    pollinator_order = factor(pollinator_order,
+                              levels = c("Diptera", "Hymenoptera", 
+                                         "Lepidoptera", "Coleoptera"))
   )
+
+
+# ==========================================================
+# Prepare paired data for statistical tests
+# ==========================================================
 
 paired_data <- plot_data %>%
   select(
@@ -118,18 +139,24 @@ paired_data <- plot_data %>%
   pivot_wider(
     names_from = Strategy,
     values_from = percentage
+  ) %>%
+  # 重新确保因子顺序
+  mutate(
+    Plant_Number = factor(Plant_Number, 
+                          levels = c("Top10", "Top5", "Top3")),
+    pollinator_order = factor(pollinator_order,
+                              levels = c("Diptera", "Hymenoptera", 
+                                         "Lepidoptera", "Coleoptera"))
   )
 
-run_paired_test <- function(
-    df,
-    strategy1,
-    strategy2
-) {
+
+# ==========================================================
+# Function: paired Wilcoxon test
+# ==========================================================
+
+run_paired_test <- function(df, strategy1, strategy2) {
   
-  if (
-    !strategy1 %in% names(df) |
-    !strategy2 %in% names(df)
-  ) {
+  if (!strategy1 %in% names(df) | !strategy2 %in% names(df)) {
     return(NA_real_)
   }
   
@@ -151,8 +178,11 @@ run_paired_test <- function(
 }
 
 
-sig_results <- list()
+# ==========================================================
+# Run statistical tests
+# ==========================================================
 
+sig_results <- list()
 counter <- 1
 
 for (order_level in levels(plot_data$pollinator_order)) {
@@ -213,7 +243,15 @@ for (order_level in levels(plot_data$pollinator_order)) {
   }
 }
 
-sig_results <- bind_rows(sig_results)
+sig_results <- bind_rows(sig_results) %>%
+  # 重新确保因子顺序
+  mutate(
+    Plant_Number = factor(Plant_Number, 
+                          levels = c("Top10", "Top5", "Top3")),
+    pollinator_order = factor(pollinator_order,
+                              levels = c("Diptera", "Hymenoptera", 
+                                         "Lepidoptera", "Coleoptera"))
+  )
 
 
 # ==========================================================
@@ -225,10 +263,10 @@ sig_results <- sig_results %>%
     
     group1 = case_when(
       comparison == "Abundance vs Random" ~
-        "Random",
+        "Flower abundance",
       
       comparison == "Abundance vs Phylogenetic" ~
-        "Phylogenetic distance",
+        "Flower abundance",
       
       comparison == "Abundance + shape vs Abundance" ~
         "Flower abundance"
@@ -236,10 +274,10 @@ sig_results <- sig_results %>%
     
     group2 = case_when(
       comparison == "Abundance vs Random" ~
-        "Flower abundance",
+        "Random",
       
       comparison == "Abundance vs Phylogenetic" ~
-        "Flower abundance",
+        "Phylogenetic distance",
       
       comparison == "Abundance + shape vs Abundance" ~
         "Flower abundance + shapes"
@@ -265,57 +303,38 @@ panel_max <- plot_data %>%
     Plant_Number
   ) %>%
   summarise(
-    ymax = max(
-      percentage,
-      na.rm = TRUE
-    ),
+    ymax = max(percentage, na.rm = TRUE),
     .groups = "drop"
   )
 
 sig_results <- sig_results %>%
   left_join(
     panel_max,
-    by = c(
-      "pollinator_order",
-      "Plant_Number"
-    )
+    by = c("pollinator_order", "Plant_Number")
   ) %>%
   mutate(
-    
     y.position = case_when(
-      
       comparison == "Abundance vs Random" ~
-        pmin(ymax + 8, 125),
+        pmin(ymax + 8, 130),
       
       comparison == "Abundance vs Phylogenetic" ~
-        pmin(ymax + 15, 125),
+        pmin(ymax + 15, 130),
       
       comparison == "Abundance + shape vs Abundance" ~
-        pmin(ymax + 22, 125)
+        pmin(ymax + 22, 130)
     )
   )
 
-scale_y_continuous(
-  limits = c(0, 135),
-  breaks = seq(0, 100, 20),
-  expand = expansion(
-    mult = c(0.01, 0.01)
-  )
-)
+
+# ==========================================================
+# Strategy colours
+# ==========================================================
 
 strategy_colors <- c(
-  
-  "Flower abundance" =
-    "#2AA889",
-  
-  "Flower abundance + shapes" =
-    "#8E6BBE",
-  
-  "Phylogenetic distance" =
-    "#E69F00",
-  
-  "Random" =
-    "#B8B8B8"
+  "Flower abundance" = "#2AA889",
+  "Flower abundance + shapes" = "#8E6BBE",
+  "Phylogenetic distance" = "#E69F00",
+  "Random" = "#B8B8B8"
 )
 
 
@@ -325,23 +344,15 @@ strategy_colors <- c(
 # ==========================================================
 
 plot_supp_order <- ggplot(
-  
   plot_data,
-  
-  aes(
-    x = Strategy,
-    y = percentage
-  )
+  aes(x = Strategy, y = percentage)
 ) +
   
   # ========================================================
 # Violin
 # ========================================================
-
 geom_violin(
-  aes(
-    fill = Strategy
-  ),
+  aes(fill = Strategy),
   width = 0.80,
   alpha = 0.55,
   color = "grey35",
@@ -352,11 +363,8 @@ geom_violin(
   # ========================================================
 # Connect networks
 # ========================================================
-
 geom_line(
-  aes(
-    group = Study_Network_id
-  ),
+  aes(group = Study_Network_id),
   color = "grey60",
   alpha = 0.08,
   linewidth = 0.20
@@ -365,11 +373,8 @@ geom_line(
   # ========================================================
 # Individual networks
 # ========================================================
-
 geom_point(
-  aes(
-    color = n_plants_total
-  ),
+  aes(color = n_plants_total),
   alpha = 0.45,
   size = 0.9
 ) +
@@ -377,19 +382,15 @@ geom_point(
   # ========================================================
 # Median
 # ========================================================
-
 geom_crossbar(
   data = plot_summary,
-  
   aes(
     x = Strategy,
     y = median,
     ymin = median,
     ymax = median
   ),
-  
   inherit.aes = FALSE,
-  
   width = 0.28,
   color = "black",
   linewidth = 0.40
@@ -398,26 +399,21 @@ geom_crossbar(
   # ========================================================
 # Mean
 # ========================================================
-
 geom_point(
   data = plot_summary,
-  
   aes(
     x = Strategy,
     y = mean
   ),
-  
   inherit.aes = FALSE,
-  
   color = "black",
   shape = 18,
   size = 3.0
 ) +
   
   # ========================================================
-# Facets
+# Facets - 注意：行是pollinator_order，列是Plant_Number
 # ========================================================
-
 facet_grid(
   pollinator_order ~ Plant_Number,
   scales = "free_x",
@@ -427,7 +423,6 @@ facet_grid(
   # ========================================================
 # Strategy colours
 # ========================================================
-
 scale_fill_manual(
   values = strategy_colors,
   name = "Subsampling strategy"
@@ -436,7 +431,6 @@ scale_fill_manual(
   # ========================================================
 # Network size
 # ========================================================
-
 scale_color_viridis_c(
   option = "turbo",
   begin = 0.18,
@@ -448,21 +442,12 @@ scale_color_viridis_c(
   # ========================================================
 # X labels
 # ========================================================
-
 scale_x_discrete(
   labels = c(
-    
-    "Flower abundance" =
-      "Abundance",
-    
-    "Flower abundance + shapes" =
-      "Abundance + shape",
-    
-    "Phylogenetic distance" =
-      "Phylogenetic",
-    
-    "Random" =
-      "Random"
+    "Flower abundance" = "Abundance",
+    "Flower abundance + shapes" = "Abundance + shape",
+    "Phylogenetic distance" = "Phylogenetic",
+    "Random" = "Random"
   ),
   drop = TRUE
 ) +
@@ -470,26 +455,15 @@ scale_x_discrete(
   # ========================================================
 # Y axis
 # ========================================================
-
 scale_y_continuous(
   limits = c(0, 135),
-  breaks = seq(
-    0,
-    100,
-    by = 20
-  ),
-  expand = expansion(
-    mult = c(
-      0.01,
-      0.01
-    )
-  )
+  breaks = seq(0, 100, by = 20),
+  expand = expansion(mult = c(0.01, 0.01))
 ) +
   
   # ========================================================
 # Labels
 # ========================================================
-
 labs(
   x = "Subsampling strategy",
   y = "Percent of pollinator richness captured"
@@ -498,13 +472,9 @@ labs(
   # ========================================================
 # Theme
 # ========================================================
-
-theme_classic(
-  base_size = 11
-) +
+theme_classic(base_size = 11) +
   
   theme(
-    
     axis.title = element_text(
       face = "bold",
       size = 12
@@ -541,30 +511,18 @@ theme_classic(
       size = 9
     ),
     
-    panel.spacing = unit(
-      0.8,
-      "lines"
-    ),
+    panel.spacing = unit(0.8, "lines"),
     
-    plot.margin = margin(
-      10,
-      10,
-      10,
-      10
-    )
+    plot.margin = margin(10, 10, 10, 10)
   ) +
   
   # ========================================================
 # Legends
 # ========================================================
-
 guides(
-  
   fill = guide_legend(
     order = 1,
-    override.aes = list(
-      alpha = 0.7
-    )
+    override.aes = list(alpha = 0.7)
   ),
   
   color = guide_colorbar(
@@ -572,28 +530,40 @@ guides(
     barwidth = 8,
     barheight = 0.7
   )
+) +
+  
+  # ========================================================
+# Significance annotations
+# ========================================================
+stat_pvalue_manual(
+  sig_results,
+  label = "label",
+  xmin = "group1",
+  xmax = "group2",
+  y.position = "y.position",
+  tip.length = 0.01,
+  bracket.size = 0.3,
+  size = 3,
+  hide.ns = FALSE
 )
 
-plot_supp_order <- plot_supp_order +
-  
-  stat_pvalue_manual(
-    
-    sig_results,
-    
-    label = "label",
-    
-    xmin = "group1",
-    xmax = "group2",
-    
-    y.position = "y.position",
-    
-    tip.length = 0.01,
-    
-    bracket.size = 0.3,
-    
-    size = 3,
-    
-    hide.ns = FALSE
-  )
-
 plot_supp_order
+
+ggsave(
+  filename = "/Chap1_TargetPlant_to_monitor/result_260723/Supplementary_Figure_pollinator_order.png",
+  plot = plot_supp_order,
+  width = 10,
+  height = 9,
+  units = "in",
+  dpi = 600,
+  bg = "white"
+)
+
+ggsave(
+  filename = "/Chap1_TargetPlant_to_monitor/result_260723/Supplementary_Figure_pollinator_order.pdf",
+  plot = plot_supp_order,
+  width = 10,
+  height = 9,
+  units = "in",
+  device = cairo_pdf
+)
