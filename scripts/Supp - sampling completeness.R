@@ -8,7 +8,7 @@
 library(dplyr)
 library(iNEXT)
 library(ggplot2)
-
+data_merge <- readRDS("data/processed/data_merge.rds")
 # -----------------------------
 # 1. 准备每个网络的 pollinator abundance
 # -----------------------------
@@ -57,25 +57,28 @@ write.csv(coverage_results, "pollinator_sampling_completeness.csv", row.names = 
 
 #################################################################
 
-sampling_c<-ggplot(coverage_results,
-       aes(x = coverage_est)) +
-  geom_histogram(bins = 20) +
+sampling_c <- ggplot(coverage_results, aes(x = coverage_est)) +
+  geom_histogram(
+    bins = 20,
+    fill = "#A1D8E8",
+    colour = "white",
+    linewidth = 0.3
+  ) +
   labs(
     x = "Pollinator sampling completeness",
     y = "Number of networks"
   ) +
   theme_classic(base_size = 12) +
   theme(
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 15),
     axis.title = element_text(face = "bold", size = 15),
     axis.text = element_text(color = "black", size = 12),
-    legend.title = element_text(face = "bold", size = 11),
-    legend.text = element_text(size = 10),
-    legend.position = "right",
+    axis.line = element_line(linewidth = 0.4),
+    axis.ticks = element_line(linewidth = 0.4),
+    axis.ticks.length = unit(2, "pt"),
     panel.background = element_blank(),
     panel.grid = element_blank(),
     plot.margin = margin(5, 15, 5, 5)
   )
   
-
-ggsave("./result_260526/sampling_complete.png", sampling_c, width = 5, height = 3, units = "in", dpi = 300)
+sampling_c
+ggsave("/Chap1_TargetPlant_to_monitor/result_260723/sampling_complete.png", sampling_c, width = 5, height = 3, units = "in", dpi = 300)

@@ -1268,51 +1268,6 @@ plateau_H2_rand <- detect_plateau(
 
 
 # =============================================================================
-# 20. Print plateau results
-# =============================================================================
-
-cat("\n============================================\n")
-cat("Minimum sampling effort (rho >= 0.8)\n")
-cat("============================================\n")
-
-cat(
-  "NODF - Abundance: n =",
-  plateau_nodf,
-  "\n"
-)
-
-cat(
-  "NODF - Random:    n =",
-  plateau_nodf_rand,
-  "\n"
-)
-
-cat(
-  "Connectance - Abundance: n =",
-  plateau_conn,
-  "\n"
-)
-
-cat(
-  "Connectance - Random:    n =",
-  plateau_conn_rand,
-  "\n"
-)
-
-cat(
-  "H2 - Abundance: n =",
-  plateau_H2,
-  "\n"
-)
-
-cat(
-  "H2 - Random:    n =",
-  plateau_H2_rand,
-  "\n"
-)
-
-
-# =============================================================================
 # 21. Prediction data
 # =============================================================================
 
@@ -1438,110 +1393,10 @@ if (!is.null(sat_model_H2_rand)) {
 }
 
 
-# =============================================================================
-# 22. NODF plot
-# =============================================================================
 
-p_nodf <- ggplot() +
-  
-  geom_ribbon(
-    data = r_curve_random,
-    aes(
-      x = n,
-      ymin = rho_nodf_mean - rho_nodf_sd,
-      ymax = rho_nodf_mean + rho_nodf_sd
-    ),
-    fill = "grey80",
-    alpha = 0.5
-  ) +
-  
-  # geom_line(
-  #   data = r_curve_random,
-  #   aes(
-  #     x = n,
-  #     y = rho_nodf_mean
-  #   ),
-  #   color = "grey50",
-  #   linetype = "dashed",
-  #   linewidth = 1,
-  #   alpha = 0.7
-  # ) +
-  
-  geom_point(
-    data = r_curve,
-    aes(
-      x = n,
-      y = rho_nodf
-    ),
-    color = "#355A9A",
-    size = 2
-  ) +
-  
-  geom_vline(
-    xintercept = plateau_nodf,
-    color = "#355A9A",
-    linewidth = 1.2,
-    alpha = 0.8
-  ) +
-  
-  geom_vline(
-    xintercept = plateau_nodf_rand,
-    color = "grey50",
-    linetype = "dashed",
-    linewidth = 1.2,
-    alpha = 0.8
-  ) +
-  
-  annotate(
-    "text",
-    x = plateau_nodf - 12,
-    y = max(r_curve$rho_nodf, na.rm = TRUE) - 0.15,
-    label = paste0(
-      "Abundant:\nn = ",
-      plateau_nodf
-    ),
-    color = "#355A9A",
-    vjust = 1,
-    hjust = -0.1,
-    size = 3.5
-  ) +
-  
-  annotate(
-    "text",
-    x = plateau_nodf_rand - 12,
-    y = max(
-      r_curve_random$rho_nodf_mean,
-      na.rm = TRUE
-    ) - 0.15,
-    label = paste0(
-      "Random:\nn = ",
-      plateau_nodf_rand
-    ),
-    color = "grey50",
-    vjust = 1,
-    hjust = -0.1,
-    size = 3.5
-  ) +
-  
-  labs(
-    title = "a. Nestedness",
-    x = "Sampled plant species",
-    y = NULL
-  ) +
-  
-  theme_classic(base_size = 13) +
-  
-  theme(
-    plot.title = element_text(
-      hjust = 0.5,
-      face = "bold"
-    ),
-    axis.text = element_text(size = 11),
-    axis.title = element_text(size = 12)
-  )
 
 # =============================================================================
-# 23. Connectance plot
+# 22. Connectance plot
 # =============================================================================
 
 p_conn <- ggplot() +
@@ -1626,7 +1481,109 @@ p_conn <- ggplot() +
   ) +
   
   labs(
-    title = "b. Connectance",
+    title = "a. Connectance",
+    x = "Sampled plant species",
+    y = NULL
+  ) +
+  
+  theme_classic(base_size = 13) +
+  
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold"
+    ),
+    axis.text = element_text(size = 11),
+    axis.title = element_text(size = 12)
+  )
+
+# =============================================================================
+# 23. NODF plot
+# =============================================================================
+
+p_nodf <- ggplot() +
+  
+  geom_ribbon(
+    data = r_curve_random,
+    aes(
+      x = n,
+      ymin = rho_nodf_mean - rho_nodf_sd,
+      ymax = rho_nodf_mean + rho_nodf_sd
+    ),
+    fill = "grey80",
+    alpha = 0.5
+  ) +
+  
+  # geom_line(
+  #   data = r_curve_random,
+  #   aes(
+  #     x = n,
+  #     y = rho_nodf_mean
+  #   ),
+  #   color = "grey50",
+  #   linetype = "dashed",
+  #   linewidth = 1,
+  #   alpha = 0.7
+# ) +
+
+geom_point(
+  data = r_curve,
+  aes(
+    x = n,
+    y = rho_nodf
+  ),
+  color = "#355A9A",
+  size = 2
+) +
+  
+  geom_vline(
+    xintercept = plateau_nodf,
+    color = "#355A9A",
+    linewidth = 1.2,
+    alpha = 0.8
+  ) +
+  
+  geom_vline(
+    xintercept = plateau_nodf_rand,
+    color = "grey50",
+    linetype = "dashed",
+    linewidth = 1.2,
+    alpha = 0.8
+  ) +
+  
+  annotate(
+    "text",
+    x = plateau_nodf - 12,
+    y = max(r_curve$rho_nodf, na.rm = TRUE) - 0.15,
+    label = paste0(
+      "Abundant:\nn = ",
+      plateau_nodf
+    ),
+    color = "#355A9A",
+    vjust = 1,
+    hjust = -0.1,
+    size = 3.5
+  ) +
+  
+  annotate(
+    "text",
+    x = plateau_nodf_rand - 12,
+    y = max(
+      r_curve_random$rho_nodf_mean,
+      na.rm = TRUE
+    ) - 0.15,
+    label = paste0(
+      "Random:\nn = ",
+      plateau_nodf_rand
+    ),
+    color = "grey50",
+    vjust = 1,
+    hjust = -0.1,
+    size = 3.5
+  ) +
+  
+  labs(
+    title = "b. Nestedness",
     x = "Sampled plant species",
     y = NULL
   ) +
@@ -1728,7 +1685,7 @@ p_H2 <- ggplot() +
   ) +
   
   labs(
-    title = "c. H2′",
+    title = expression(bold("c. Selectivity (" * H[2] * "\u2032)")),
     x = "Sampled plant species",
     y = NULL
   ) +

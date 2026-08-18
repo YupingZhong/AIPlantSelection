@@ -237,15 +237,22 @@ R2_strata <- round(adonis_res$R2[1], 3)
 P_strata <- adonis_res$`Pr(>F)`[1]
 P_strata_text <- ifelse(P_strata < 0.001, "P < 0.001", paste0("P = ", round(P_strata, 3)))
 
-############################################
+
+
+# ############################################
 # Figure A
 # Variation in pollinator community composition among flower shapes
 # betadisper + Tukey HSD
-############################################
-
-############################################
+# ############################################
+# ############################################
 # A. Betadisper + Tukey
 ############################################
+library(dplyr)
+library(lme4)
+library(lmerTest)
+library(emmeans)
+library(multcomp)
+
 disp <- readRDS("data/processed/disp.rds")
 
 disp_df <- data.frame(
@@ -253,11 +260,13 @@ disp_df <- data.frame(
   FlowerShape = meta$flw_shape_revised,
   Study_id = meta$Study_id,
   Study_Network_id = meta$Study_Network_id
-)
-
-
-library(lme4)
-library(lmerTest)
+) %>%
+  filter(!is.na(FlowerShape)) %>%
+  mutate(
+    Study_id = factor(Study_id),
+    Study_Network_id = factor(Study_Network_id),
+    FlowerShape = factor(FlowerShape)
+  )
 
 disp_model <- lmer(
   Distance ~ Study_id + FlowerShape + (1 | Study_Network_id),
@@ -265,32 +274,16 @@ disp_model <- lmer(
 )
 
 anova(disp_model)
-library(emmeans)
-library(multcompView)
 
-emm <- emmeans(
-  disp_model,
-  ~ FlowerShape
-)
+emm <- emmeans(disp_model, ~ FlowerShape)
 
-emm_df <- as.data.frame(emm) %>%
-  mutate(
-    FlowerShape = factor(
-      FlowerShape,
-      levels = shape_order
-    )
-  ) %>%
-  left_join(
-    letters_df,
-    by = "FlowerShape"
-  )
+# 先定义绘图排序：由小到大
+shape_order <- as.data.frame(emm) %>%
+  arrange(emmean) %>%
+  pull(FlowerShape)
 
-pairs_res <- pairs(
-  emm,
-  adjust = "tukey"
-)
-
-letters_df <- cld(
+# Tukey 字母分组
+letters_df <- multcomp::cld(
   emm,
   adjust = "tukey",
   Letters = letters,
@@ -299,33 +292,25 @@ letters_df <- cld(
   as.data.frame() %>%
   dplyr::select(FlowerShape, .group) %>%
   rename(Letters = .group) %>%
-  mutate(Letters = trimws(Letters))
+  mutate(
+    Letters = trimws(Letters),
+    FlowerShape = factor(FlowerShape, levels = shape_order)
+  )
 
+# 用于作图的 estimated marginal means
+emm_df <- as.data.frame(emm) %>%
+  mutate(
+    FlowerShape = factor(FlowerShape, levels = shape_order)
+  ) %>%
+  left_join(letters_df, by = "FlowerShape")
 
-shape_order <- as.data.frame(emm) %>%
-  arrange(emmean) %>%
-  pull(FlowerShape)
+# 两两 Tukey 比较结果
+pairs_res <- pairs(emm, adjust = "tukey")
 
+# 若后续箱线图/散点图使用这些对象，再统一排序
+disp_df <- disp_df %>%
+  mutate(FlowerShape = factor(FlowerShape, levels = shape_order))
 
-disp_df$FlowerShape <- factor(
-  disp_df$FlowerShape,
-  levels = shape_order
-)
-
-letters_df$FlowerShape <- factor(
-  letters_df$FlowerShape,
-  levels = shape_order
-)
-
-df_beta$FlowerShape <- factor(
-  df_beta$FlowerShape,
-  levels = shape_order
-)
-
-df_beta_long$FlowerShape <- factor(
-  df_beta_long$FlowerShape,
-  levels = shape_order
-)
 
 ############################################
 # B. Beta diversity partition
@@ -576,180 +561,14 @@ df_beta_long <- df_beta %>%
     names_to = "Component",
     values_to = "Proportion"
   )
-############################################
-# Panel A
-############################################
-
-label_pos <- disp_df %>%
-  group_by(FlowerShape) %>%
-  summarise(
-    xpos = max(Distance),
-    .groups = "drop"
-  ) %>%
-  left_join(
-    letters_df,
-    by = "FlowerShape"
-  ) %>%
-  mutate(
-    xpos = xpos * 1.08
-  )
 
 
-pA <- ggplot(
-  disp_df,
-  aes(x = FlowerShape, y = Distance)
-) +
-  
-  # 原始数据
-  geom_boxplot(
-    fill = "#7b95c6",
-    alpha = 0.45,
-    width = 0.65,
-    outlier.shape = NA,
-    linewidth = 0.35
-  ) +
-  
-  geom_jitter(
-    width = 0.12,
-    size = 0.55,
-    color = "grey60",
-    alpha = 0.18
-  ) +
-  
-  # adjusted mean 的 95% CI
-  geom_errorbar(
-    data = emm_df,
-    aes(
-      x = FlowerShape,
-      ymin = asymp.LCL,
-      ymax = asymp.UCL
-    ),
-    inherit.aes = FALSE,
-    width = 0.12,
-    linewidth = 0.45
-  ) +
-  
-  # adjusted mean
-  geom_point(
-    data = emm_df,
-    aes(
-      x = FlowerShape,
-      y = emmean
-    ),
-    inherit.aes = FALSE,
-    size = 2.3,
-    shape = 21,
-    fill = "white",
-    stroke = 0.8
-  ) +
-  
-  # Tukey letters
-  geom_text(
-    data = emm_df,
-    aes(
-      x = FlowerShape,
-      y = asymp.UCL + 0.025,
-      label = Letters
-    ),
-    inherit.aes = FALSE,
-    size = 3.5,
-    fontface = "bold"
-  ) +
-  
-  coord_flip(clip = "off") +
-  
-  labs(
-    x = NULL,
-    y = "Pollinator community dispersion"
-  ) +
-  
-  theme_classic(base_size = 10) +
-  theme(
-    axis.title.x = element_text(
-      face = "bold",
-      size = 11
-    ),
-    axis.text.y = element_text(
-      color = "black",
-      size = 9
-    ),
-    axis.text.x = element_text(
-      color = "black",
-      size = 9
-    ),
-    plot.margin = margin(3, 5, 3, 3)
-  )
+df_beta$FlowerShape <- factor(df_beta$FlowerShape, levels = shape_order)
 
-pA
-############################################
-# Panel B
-############################################
-
-pB <- ggplot(
-  df_beta_long,
-  aes(
-    x = FlowerShape,
-    y = Proportion,
-    fill = Component
-  )
-) +
-  geom_col(width = 0.65) +
-  coord_flip() +
-  scale_y_continuous(
-    limits = c(0, 1),
-    breaks = c(0, 0.25, 0.5, 0.75, 1),
-    labels = c("0%", "25%", "50%", "75%", "100%"),
-    expand = c(0, 0)
-  ) +
-  scale_fill_manual(
-    values = c(
-      "Turnover" = "#a1d8e8",
-      "Nestedness" = "#a2c986"
-    )
-  ) +
-  labs(
-    x = NULL,
-    y = "Relative contribution to β-diversity",
-    fill = NULL
-  ) +
-  theme_classic(base_size = 10) +
-  theme(
-    axis.text.y = element_blank(),
-    axis.ticks.y = element_blank(),
-    axis.line.y = element_blank(),
-    axis.title.x = element_text(face = "bold", size = 11),
-    axis.text.x = element_text(color = "black", size = 8),
-    axis.ticks.x = element_line(linewidth = 0.3),
-    axis.line.x = element_line(linewidth = 0.4),
-    legend.position = "right",
-    legend.direction = "vertical",
-    legend.text = element_text(size = 9),
-    plot.margin = margin(3, 5, 3, 3)
-  )
-############################################
-# Combine
-############################################
-figure_all <- cowplot::plot_grid(
-  pA,
-  pB,
-  nrow = 1,
-  rel_widths = c(1.8, 1),
-  align = "h"
+df_beta_long$FlowerShape <- factor(
+  df_beta_long$FlowerShape,
+  levels = shape_order
 )
-
-figure_all
-
-ggsave(
-  "/Chap1_TargetPlant_to_monitor/result_260723/flower_shape_beta_partition_AB.png",
-  figure_all,
-  width = 8.5,
-  height = 3.0,
-  dpi = 600,
-  bg = "white"
-)
-
-
-
 
 #=========================================
 
@@ -896,7 +715,7 @@ visit_group <- ggplot(plot_df,
     limits = c(0,1),
     breaks = c(0,0.25,0.5,0.75,1),
     labels = c("0%","25%","50%","75%","100%"),
-    expand = c(0,0)
+    expand = expansion(mult = c(0, 0.04))
   ) +
   scale_fill_manual(values = group_cols, drop = FALSE) +
   labs(x = NULL, y = "Mean proportion of pollinator visits", fill = "Pollinator group") +
@@ -915,8 +734,261 @@ visit_group <- ggplot(plot_df,
 
 visit_group
 
-ggsave("/Chap1_TargetPlant_to_monitor/result_260723/visit_larger_group_sum.png", visit_group, width = 7, 
+ggsave("/Chap1_TargetPlant_to_monitor/result_260723/visit_larger_group_sum.png", visit_group, width = 5, 
        height = 3.0, units = "in", dpi = 600, bg = "white")  
+
+# 不带图例的主体图
+visit_group_no_legend <- visit_group +
+  theme(legend.position = "none")
+
+# 单独提取图例：底部、两行
+visit_group_legend <- cowplot::get_legend(
+  visit_group +
+    theme(
+      legend.position = "bottom",
+      legend.direction = "horizontal",
+      legend.box = "vertical"
+    ) +
+    guides(
+      fill = guide_legend(
+        nrow = 2,
+        byrow = TRUE,
+        title.position = "top"
+      )
+    )
+)
+
+# 分别保存
+ggsave(
+  "/Chap1_TargetPlant_to_monitor/result_260723/visit_group_no_legend.png",
+  visit_group_no_legend,
+  width = 4, height = 3,
+  units = "in", dpi = 600, bg = "white"
+)
+
+ggsave(
+  "/Chap1_TargetPlant_to_monitor/result_260723/visit_group_legend.png",
+  visit_group_legend,
+  width = 8, height = 1.1,
+  units = "in", dpi = 600, bg = "white"
+)
+###################################################################
+############################################
+# Panel A
+############################################
+# ==========================================================
+# 让 Panel A 的 flower-shape 顺序跟随 visit_group
+# ==========================================================
+
+shared_shape_order <- levels(plot_df$flw_shape_revised)
+
+disp_df <- disp_df %>%
+  filter(FlowerShape %in% shared_shape_order) %>%
+  mutate(
+    FlowerShape = factor(
+      as.character(FlowerShape),
+      levels = shared_shape_order
+    )
+  )
+
+emm_df <- emm_df %>%
+  filter(FlowerShape %in% shared_shape_order) %>%
+  mutate(
+    FlowerShape = factor(
+      as.character(FlowerShape),
+      levels = shared_shape_order
+    )
+  )
+
+letters_df <- letters_df %>%
+  filter(FlowerShape %in% shared_shape_order) %>%
+  mutate(
+    FlowerShape = factor(
+      as.character(FlowerShape),
+      levels = shared_shape_order
+    )
+  )
+
+label_pos <- disp_df %>%
+  group_by(FlowerShape) %>%
+  summarise(
+    xpos = max(Distance),
+    .groups = "drop"
+  ) %>%
+  left_join(
+    letters_df,
+    by = "FlowerShape"
+  ) %>%
+  mutate(
+    xpos = xpos * 1.08
+  )
+
+
+pA <- ggplot(
+  disp_df,
+  aes(x = FlowerShape, y = Distance)
+) +
+  
+  # 原始数据
+  geom_boxplot(
+    fill = "#7b95c6",
+    alpha = 0.45,
+    width = 0.65,
+    outlier.shape = NA,
+    linewidth = 0.35
+  ) +
+  
+  geom_jitter(
+    width = 0.12,
+    size = 0.55,
+    color = "grey60",
+    alpha = 0.18
+  ) +
+  
+  # adjusted mean 的 95% CI
+  geom_errorbar(
+    data = emm_df,
+    aes(
+      x = FlowerShape,
+      ymin = asymp.LCL,
+      ymax = asymp.UCL
+    ),
+    inherit.aes = FALSE,
+    width = 0.12,
+    linewidth = 0.45
+  ) +
+  
+  # adjusted mean
+  geom_point(
+    data = emm_df,
+    aes(
+      x = FlowerShape,
+      y = emmean
+    ),
+    inherit.aes = FALSE,
+    size = 2.3,
+    shape = 21,
+    fill = "white",
+    stroke = 0.8
+  ) +
+  
+  # Tukey letters
+  geom_text(
+    data = emm_df,
+    aes(
+      x = FlowerShape,
+      y = asymp.UCL + 0.025,
+      label = Letters
+    ),
+    inherit.aes = FALSE,
+    size = 3.5,
+    fontface = "bold"
+  ) +
+  
+  coord_flip(clip = "off") +
+  
+  labs(
+    x = NULL,
+    y = "Pollinator community dispersion"
+  ) +
+  
+  theme_classic(base_size = 10) +
+  theme(
+    axis.title.x = element_text(
+      face = "bold",
+      size = 11
+    ),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.line.y = element_blank(),
+    axis.text.x = element_text(
+      color = "black",
+      size = 9
+    ),
+    plot.margin = margin(3, 5, 3, 3)
+  )
+
+pA
+# ############################################
+# # Panel B
+# ############################################
+# 
+# pB <- ggplot(
+#   df_beta_long,
+#   aes(
+#     x = FlowerShape,
+#     y = Proportion,
+#     fill = Component
+#   )
+# ) +
+#   geom_col(width = 0.65) +
+#   coord_flip() +
+#   scale_y_continuous(
+#     limits = c(0, 1),
+#     breaks = c(0, 0.25, 0.5, 0.75, 1),
+#     labels = c("0%", "25%", "50%", "75%", "100%"),
+#     expand = c(0, 0)
+#   ) +
+#   scale_fill_manual(
+#     values = c(
+#       "Turnover" = "#a1d8e8",
+#       "Nestedness" = "#a2c986"
+#     )
+#   ) +
+#   labs(
+#     x = NULL,
+#     y = "Relative contribution to β-diversity",
+#     fill = NULL
+#   ) +
+#   theme_classic(base_size = 10) +
+#   theme(
+#     axis.text.y = element_blank(),
+#     axis.ticks.y = element_blank(),
+#     axis.line.y = element_blank(),
+#     axis.title.x = element_text(face = "bold", size = 11),
+#     axis.text.x = element_text(color = "black", size = 8),
+#     axis.ticks.x = element_line(linewidth = 0.3),
+#     axis.line.x = element_line(linewidth = 0.4),
+#     legend.position = "right",
+#     legend.direction = "vertical",
+#     legend.text = element_text(size = 9),
+#     plot.margin = margin(3, 5, 3, 3)
+#   )
+# ############################################
+# # Combine
+# ############################################
+# figure_all <- cowplot::plot_grid(
+#   pA,
+#   pB,
+#   nrow = 1,
+#   rel_widths = c(1.8, 1),
+#   align = "h"
+# )
+# 
+# figure_all
+# 
+# ggsave(
+#   "/Chap1_TargetPlant_to_monitor/result_260723/flower_shape_beta_partition_AB.png",
+#   figure_all,
+#   width = 8.5,
+#   height = 3.0,
+#   dpi = 600,
+#   bg = "white"
+# )
+# 
+
+ggsave(
+  "/Chap1_TargetPlant_to_monitor/result_260723/flower_shape_beta_partition_A.png",
+  pA,
+  width = 2.8,
+  height = 3.0,
+  dpi = 600,
+  bg = "white"
+)
+
+
+
 
 
 

@@ -86,7 +86,7 @@ x_max <- max(
 
 breaks_all <- seq(0, x_max, by = 10)
 # Plant distribution
-histogram_1 <- ggplot(plant_diversity, aes(x = plant_sp_number, fill = "#009E73")) +
+histogram_1 <- ggplot(plant_diversity, aes(x = plant_sp_number, fill = "#2AA889")) +
   geom_histogram(binwidth = 2, color = "black", boundary = 0) +
   labs(x = "Flower species", y = "Number of Networks") +
   scale_fill_identity() +
@@ -100,7 +100,7 @@ histogram_1 <- ggplot(plant_diversity, aes(x = plant_sp_number, fill = "#009E73"
 histogram_1
 # -----------------------------
 # Pollinator distribution
-histogram_2 <- ggplot(pollinator_diversity, aes(x = pollinator_sp_number, fill = "#D55E00")) +
+histogram_2 <- ggplot(pollinator_diversity, aes(x = pollinator_sp_number, fill = "#E69F00")) +
   geom_histogram(binwidth = 2, color = "black", boundary = 0) +
   labs(x = "Pollinator species in interaction data", y = "Number of Networks") +
   scale_fill_identity() +
@@ -118,7 +118,7 @@ shape_freq$shape_number <- as.factor(shape_freq$shape_number)
 sum(as.numeric(as.character(shape_freq$shape_number)) * shape_freq$freq) /
   sum(shape_freq$freq)
 
-shape_barplot <- ggplot(shape_freq, aes(x = shape_number, y = freq, fill = "#9E9AC8")) +
+shape_barplot <- ggplot(shape_freq, aes(x = shape_number, y = freq, fill = "#8E6BBE")) +
   geom_col(color = "black") +
   labs(
     x = "Number of flower shapes",
@@ -131,6 +131,39 @@ shape_barplot <- ggplot(shape_freq, aes(x = shape_number, y = freq, fill = "#9E9
         strip.background = element_rect(fill = "white", color = NA),
         strip.text = element_text(size = 12, face = "bold"))
 shape_barplot
+
+library(cowplot)
+
+supp_fig <- plot_grid(
+  histogram_1,
+  histogram_2,
+  shape_barplot,
+  ncol = 1,
+  labels = c("a", "b", "c"),
+  label_size = 15,
+  label_fontface = "bold",
+  label_x = 0.01,
+  label_y = 0.99,
+  hjust = 0,
+  vjust = 1,
+  align = "v"
+)
+
+supp_fig
+
+ggsave(
+  "/Chap1_TargetPlant_to_monitor/result_260723/Supplementary_Figure.png",
+  supp_fig,
+  width = 7,
+  height = 7.5,
+  dpi = 300
+)
+ggsave(
+  "/Chap1_TargetPlant_to_monitor/result_260723/Supplementary_Figure.pdf",
+  supp_fig,
+  width = 7,
+  height = 7.5
+)
 # -----------------------------
 # 先从shape_class_freq中提取排序顺序 - 改为降序
 shape_order <- shape_class_freq %>%
