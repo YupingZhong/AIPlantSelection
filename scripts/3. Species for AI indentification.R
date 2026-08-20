@@ -29,60 +29,60 @@ meta_count<-readRDS("data/raw/Flower_counts_published.rds")%>%
 Poll_sp<-unique(metadata$Pollinator_accepted_name)#2668 POLLINATORS 
 Plant_sp<-unique(metadata$Plant_accepted_name)#1543 POLLINATORS
 
-#check the crop site
-flowercout_check<-meta_count %>%
-  group_by(Study_Network_id) %>%
-  mutate(sum_abun = sum(Flower_count),percent_abun = Flower_count/sum_abun)%>%
-  ungroup()%>%
-  filter(percent_abun>0.5 )
-
-flowercoutsite<-flowercout_check%>%distinct(Study_Network_id,Plant_species)
-flowercout_check%>%distinct(Study_Network_id)
-flowercoutsite_list<-unique(flowercout_check$Plant_species)
-
-#list argriculture plants with over 50% ralative abundance:
-#this step is to exclude crop dominant site
-
-crop_species <- c(
-  "Medicago sativa",
-  "Helianthus annuus",
-  "Brassica napus",
-  "Vicia faba",
-  "Solanum tuberosum",
-  "Asparagus officinalis",
-  "Brassica oleracea"
-)
-
-
-# 1️⃣ site level filter
-site_info <- metadata %>%
-  group_by(Study_Network_id) %>%
-  summarise(
-    site_visit_time = sum(Interaction, na.rm = TRUE),
-    plant_sp = n_distinct(Plant_accepted_name)
-  ) %>%
-  filter(plant_sp < 10)
-
-#  abundance level filter（只保留 crop）
-crop_dom <- meta_count %>%
-  filter(Plant_species %in% crop_species) %>%
-  group_by(Study_Network_id) %>%
-  mutate(
-    sum_abun = sum(Flower_count, na.rm = TRUE),
-    percent_abun = Flower_count / sum_abun
-  ) %>%
-  filter(percent_abun > 0.5) %>%
-  ungroup()
-
-# 找交集 Study_Network_id
-crop_dom_site <- intersect(
-  site_info$Study_Network_id,
-  unique(crop_dom$Study_Network_id)
-)
-crop_dom_site
-
-
-dplyr::n_distinct(metadata$Study_Network_id)
+# #check the crop site
+# flowercout_check<-meta_count %>%
+#   group_by(Study_Network_id) %>%
+#   mutate(sum_abun = sum(Flower_count),percent_abun = Flower_count/sum_abun)%>%
+#   ungroup()%>%
+#   filter(percent_abun>0.5 )
+# 
+# flowercoutsite<-flowercout_check%>%distinct(Study_Network_id,Plant_species)
+# flowercout_check%>%distinct(Study_Network_id)
+# flowercoutsite_list<-unique(flowercout_check$Plant_species)
+# 
+# #list argriculture plants with over 50% ralative abundance:
+# #this step is to exclude crop dominant site
+# 
+# crop_species <- c(
+#   "Medicago sativa",
+#   "Helianthus annuus",
+#   "Brassica napus",
+#   "Vicia faba",
+#   "Solanum tuberosum",
+#   "Asparagus officinalis",
+#   "Brassica oleracea"
+# )
+# 
+# 
+# # 1️⃣ site level filter
+# site_info <- metadata %>%
+#   group_by(Study_Network_id) %>%
+#   summarise(
+#     site_visit_time = sum(Interaction, na.rm = TRUE),
+#     plant_sp = n_distinct(Plant_accepted_name)
+#   ) %>%
+#   filter(plant_sp < 10)
+# 
+# #  abundance level filter（只保留 crop）
+# crop_dom <- meta_count %>%
+#   filter(Plant_species %in% crop_species) %>%
+#   group_by(Study_Network_id) %>%
+#   mutate(
+#     sum_abun = sum(Flower_count, na.rm = TRUE),
+#     percent_abun = Flower_count / sum_abun
+#   ) %>%
+#   filter(percent_abun > 0.5) %>%
+#   ungroup()
+# 
+# # 找交集 Study_Network_id
+# crop_dom_site <- intersect(
+#   site_info$Study_Network_id,
+#   unique(crop_dom$Study_Network_id)
+# )
+# crop_dom_site
+# 
+# 
+# dplyr::n_distinct(metadata$Study_Network_id)
 
 ##========================================
 
@@ -114,7 +114,7 @@ sum(Interaction_data_pol_sp$Interaction)
 #======================================================================================
 
 pollinator_importance_A <- Interaction_data_pol_sp %>%
-  filter(!Study_Network_id %in% crop_dom_site) %>%
+  # filter(!Study_Network_id %in% crop_dom_site) %>%
   group_by(Study_Network_id) %>%
   mutate(network_total_inter = sum(Interaction, na.rm = TRUE)) %>%
   ungroup() %>%
@@ -477,7 +477,7 @@ ggsave(
 cat("\n\n========== 按目（Order）分组分析 - 方案A ==========\n\n")
 
 pollinator_by_order_A <- Interaction_data_pol_sp %>%
-  filter(!Study_Network_id %in% crop_dom_site) %>%
+  # filter(!Study_Network_id %in% crop_dom_site) %>%
   filter(!is.na(Pollinator_order)) %>%
   group_by(Study_Network_id) %>%
   mutate(network_total = sum(Interaction, na.rm = TRUE)) %>%
@@ -646,7 +646,7 @@ pollinator_top_with_genus <- pollinator_importance_A %>%
   filter(Rank <= target_x_A) %>%
   left_join(
     Interaction_data_pol_sp %>%
-      filter(!Study_Network_id %in% crop_dom_site) %>%
+      # filter(!Study_Network_id %in% crop_dom_site) %>%
       distinct(
         Pollinator_accepted_name,
         Pollinator_order,
@@ -688,7 +688,7 @@ order_groups <- pollinator_top_with_genus %>%
 ft_table <- flextable(pollinator_top_with_genus) %>%
   merge_v(j = c("Order", "Family")) %>%
   theme_booktabs() %>%
-  font(fontname = "Arial", part = "all") %>%
+  flextable::font(fontname = "Arial", part = "all") %>%
   fontsize(size = 10, part = "all") %>%
   bold(part = "header") %>%
   italic(j = "Species", part = "body") %>%
@@ -782,7 +782,7 @@ table_S1_summary <- pollinator_top_with_genus %>%
 
 ft_summary <- flextable(table_S1_summary) %>%
   theme_booktabs() %>%
-  font(fontname = "Arial", part = "all") %>%
+  flextable::font(fontname = "Arial", part = "all") %>%
   fontsize(size = 10, part = "all") %>%
   bold(part = "header") %>%
   merge_v(j = "Order") %>%

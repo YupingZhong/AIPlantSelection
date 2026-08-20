@@ -544,6 +544,17 @@ strategy_colors <- c(
 # Plot
 # ==========================================================
 
+# Panel labels
+
+panel_labels <- data.frame(
+  Plant_Number = factor(
+    c("Top10", "Top5", "Top3"),
+    levels = c("Top10", "Top5", "Top3")
+  ),
+  label = c("a", "b", "c")
+)
+
+
 plot_violin_size <- ggplot(
   
   plot_data,
@@ -651,13 +662,31 @@ geom_point(
   # ========================================================
 # Sampling-effort panels
 # ========================================================
-
 facet_grid(
   . ~ Plant_Number,
   scales = "free_x",
   space = "free_x"
-)  +
+) +
   
+  # ========================================================
+# Panel labels
+# ========================================================
+
+geom_text(
+  data = panel_labels,
+  aes(
+    x = -Inf,
+    y = Inf,
+    label = label
+  ),
+  inherit.aes = FALSE,
+  hjust = -0.3,
+  vjust = 1.3,
+  fontface = "bold",
+  size = 5
+) +
+  
+
   
   # ========================================================
 # Fill scale

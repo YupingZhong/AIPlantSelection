@@ -151,7 +151,7 @@ plant_rich <- data_count_scaled %>%
 # ==============================================================================
 
 poll_rich <- result_all %>%
-  select(
+  dplyr::select(
     Study_Network_id,
     total_pollinator_count_Abun10
   )
@@ -164,7 +164,7 @@ poll_rich <- result_all %>%
 richness_compare <- bind_rows(
   
   result_all %>%
-    select(
+    dplyr::select(
       Study_Network_id,
       percentage_Abun10
     ) %>%
@@ -184,7 +184,7 @@ richness_compare <- bind_rows(
     ),
   
   result_all %>%
-    select(
+    dplyr::select(
       Study_Network_id,
       percentage_Abun10
     ) %>%
@@ -263,7 +263,7 @@ nestedness_df <- data_interact %>%
 
 
 df_nested <- result_all %>%
-  select(
+  dplyr::select(
     Study_Network_id,
     percentage_Abun10
   ) %>%
@@ -340,7 +340,7 @@ p_richness <- ggplot(
   
   labs(
     x = "Richness",
-    y = "Percent of pollinator richness captured (%)",
+    y = NULL,
     color = NULL,
     shape = NULL
   ) +
@@ -384,15 +384,18 @@ p_richness <- ggplot(
     size = 3.1
   ) +
   
-  theme_classic(base_size = 12) +
+  theme_classic(base_size = 13) +
   theme(
     axis.title = element_text(
       face = "bold",
       size = 13
     ),
-    axis.text = element_text(
+    axis.text.y = element_text(
       color = "black",
       size = 11
+    ),
+    axis.ticks.y = element_line(
+      color = "black"
     ),
     legend.position = "top"
   )
@@ -460,7 +463,7 @@ p_nestedness <- ggplot(
     y = NULL
   ) +
   
-  theme_classic(base_size = 12) +
+  theme_classic(base_size = 13) +
   theme(
     axis.title.x = element_text(
       face = "bold",
@@ -471,7 +474,8 @@ p_nestedness <- ggplot(
       size = 11
     ),
     axis.text.y = element_blank(),
-    axis.ticks.y = element_blank()
+    axis.ticks.y = element_blank(),
+    axis.line.y = element_blank()
   )
 
 
@@ -607,7 +611,7 @@ p_presence <- ggplot(
     y = NULL
   ) +
   
-  theme_classic(base_size = 12) +
+  theme_classic(base_size = 13) +
   theme(
     axis.title.x = element_text(
       face = "bold",
@@ -619,6 +623,7 @@ p_presence <- ggplot(
     ),
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
+    axis.line.y = element_blank(),
     legend.position = "none"
   )
 
@@ -633,9 +638,24 @@ final_factor_fig <- plot_grid(
   p_presence,
   ncol = 3,
   labels = c("a", "b", "c"),
-  label_size = 14,
+  label_size = 16,
   label_fontface = "bold",
   align = "h"
+)
+
+y_title <- ggdraw() +
+  draw_label(
+    "Pollinator richness captured (%)",
+    angle = 90,
+    fontface = "bold",
+    size = 13
+  )
+
+final_factor_fig <- plot_grid(
+  y_title,
+  final_factor_fig,
+  ncol = 2,
+  rel_widths = c(0.06, 1)
 )
 
 print(final_factor_fig)
@@ -646,8 +666,8 @@ ggsave(
     "Fig_Factors_subsampling_effectiveness.png"
   ),
   final_factor_fig,
-  width = 13,
-  height = 4.6,
+  width = 10.5,
+  height = 4,
   units = "in",
   dpi = 600,
   bg = "white"
@@ -693,7 +713,7 @@ sp_list_grouped <- sp_list_rare %>%
   mutate(
     Illustration = ""
   ) %>%
-  select(
+  dplyr::select(
     Illustration,
     flw_shape_revised,
     Plant_species
@@ -797,7 +817,7 @@ table2 <- attract_percent_10 %>%
       3
     )
   ) %>%
-  select(
+  dplyr::select(
     Group = present_group,
     `Richness captured (%)`,
     n,

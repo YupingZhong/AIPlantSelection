@@ -237,7 +237,7 @@ R2_strata <- round(adonis_res$R2[1], 3)
 P_strata <- adonis_res$`Pr(>F)`[1]
 P_strata_text <- ifelse(P_strata < 0.001, "P < 0.001", paste0("P = ", round(P_strata, 3)))
 
-
+anova(disp)
 
 # ############################################
 # Figure A

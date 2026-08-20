@@ -1493,7 +1493,7 @@ p_conn <- ggplot() +
       hjust = 0.5,
       face = "bold"
     ),
-    axis.text = element_text(size = 11),
+    axis.text = element_text(size = 14),
     axis.title = element_text(size = 12)
   )
 
@@ -1595,7 +1595,7 @@ geom_point(
       hjust = 0.5,
       face = "bold"
     ),
-    axis.text = element_text(size = 11),
+    axis.text = element_text(size = 14),
     axis.title = element_text(size = 12)
   )
 
@@ -1697,7 +1697,7 @@ p_H2 <- ggplot() +
       hjust = 0.5,
       face = "bold"
     ),
-    axis.text = element_text(size = 11),
+    axis.text = element_text(size = 14),
     axis.title = element_text(size = 12)
   )
 
@@ -1727,10 +1727,10 @@ combined_plot_suf <- plot_grid(
 
 y_title <- ggdraw() +
   draw_label(
-    "Across-network Spearman's rho",
+    "Across-network Spearman's ρ",
     angle = 90,
     fontface = "bold",
-    size = 12
+    size = 14
   )
 
 combined_plot_suf <- plot_grid(
