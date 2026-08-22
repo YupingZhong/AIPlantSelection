@@ -154,6 +154,9 @@ target_species_A <- target_row_A$Pollinator_accepted_name
 top5_pollinators <- pollinator_importance_A %>%
   slice_head(n = 5)
 
+# 数据中的传粉者物种总数
+n_species_total <- nrow(pollinator_importance_A)
+
 richness_colors <- c("Pollinator richness" = "#F1C453")
 nestedness_color <- "#5A8BD4"
 

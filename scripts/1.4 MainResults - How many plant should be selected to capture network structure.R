@@ -1481,7 +1481,7 @@ p_conn <- ggplot() +
   ) +
   
   labs(
-    title = "a. Connectance",
+    title = "Connectance",
     x = "Sampled plant species",
     y = NULL
   ) +
@@ -1583,7 +1583,7 @@ geom_point(
   ) +
   
   labs(
-    title = "b. Nestedness",
+    title = "Nestedness",
     x = "Sampled plant species",
     y = NULL
   ) +
@@ -1685,7 +1685,7 @@ p_H2 <- ggplot() +
   ) +
   
   labs(
-    title = expression(bold("c. Selectivity (" * H[2] * "\u2032)")),
+    title = expression(bold("Selectivity (" * H[2] * "\u2032)")),
     x = "Sampled plant species",
     y = NULL
   ) +
@@ -1722,7 +1722,15 @@ combined_plot_suf <- plot_grid(
   p_nodf,
   p_H2,
   ncol = 3,
-  align = "hv"
+  align = "hv",
+  
+  labels = c("a", "b", "c"),
+  label_x = 0.01,
+  label_y = 0.99,
+  hjust = 0,
+  vjust = 1,
+  label_size = 18,
+  label_fontface = "bold"
 )
 
 y_title <- ggdraw() +
@@ -1754,7 +1762,7 @@ ggsave(
   width = 11.5,
   height = 3.8,
   units = "in",
-  dpi = 300
+  dpi = 600
 )
 
 # =============================================================================

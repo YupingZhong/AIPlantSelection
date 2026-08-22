@@ -14,7 +14,26 @@ unique(data_interact$Study_Network_id)
 unique(data_count_scaled_species$Study_Network_id)
 unique(data_merge$Study_Network_id)
 
+# Apidae占全部访花互作次数的比例
+apidae_interaction_percentage <- data_interact %>%
+  filter(
+    !is.na(Interaction_addup),
+    !is.na(Pollinator_family)
+  ) %>%
+  summarise(
+    Total_interactions = sum(
+      Interaction_addup,
+      na.rm = TRUE
+    ),
+    Apidae_interactions = sum(
+      Interaction_addup[Pollinator_family == "Apidae"],
+      na.rm = TRUE
+    ),
+    Apidae_percentage = 100 *
+      Apidae_interactions / Total_interactions
+  )
 
+print(apidae_interaction_percentage)
 ###===============================================================================
 
 # ------------1. Pollinator Species constantly Missed by Abundant 10 subsampling strategy

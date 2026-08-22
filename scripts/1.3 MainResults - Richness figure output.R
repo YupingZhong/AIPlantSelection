@@ -681,10 +681,10 @@ geom_text(
   ),
   inherit.aes = FALSE,
   hjust = -0.3,
-  vjust = 1.3,
+  vjust = -0.8,       
   fontface = "bold",
   size = 5
-) +
+)  +
   
 
   
@@ -692,27 +692,17 @@ geom_text(
 # Fill scale
 # ========================================================
 
-scale_fill_manual(
-  
-  values = strategy_colors,
-  
-  name = "Subsampling strategy"
-) +
-  
+scale_fill_manual(values = strategy_colors, name = "Subsampling strategy") +
   
   # ========================================================
 # Point colour = network size
 # ========================================================
 
 scale_color_viridis_c(
-  
   option = "turbo",
-  
   begin = 0.18,
   end = 0.90,
-  
   name = "Flowering species per network",
-  
   breaks = breaks_pretty(
     n = 5
   )
@@ -724,7 +714,6 @@ scale_color_viridis_c(
 # ========================================================
 
 scale_x_discrete(
-  
   labels = c(
     
     "Flower abundance" =
@@ -739,10 +728,8 @@ scale_x_discrete(
     "Random" =
       "Random"
   ),
-  
   drop = TRUE
 ) +
-  
   
   # ========================================================
 # Y-axis
@@ -768,7 +755,10 @@ scale_y_continuous(
     )
   )
 ) +
-  
+
+  coord_cartesian(
+    clip = "off"
+  ) +
   
   # ========================================================
 # Labels

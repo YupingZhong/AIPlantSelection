@@ -50,7 +50,7 @@ mat_numeric <- mat %>%
   mutate(SampleID = paste(Plant_accepted_name,
                           Study_Network_id, sep = "_")) %>%
   tibble::column_to_rownames("SampleID") %>%
-  select(-Plant_accepted_name, -Study_Network_id)
+  dplyr::select(-Plant_accepted_name, -Study_Network_id)
 
 meta <- plant_flw %>%
   mutate(
@@ -79,11 +79,88 @@ saveRDS(adonis_res,"data/processed/adonis_res.rds")
 #这说明globally, 花型对传粉者群落组成的影响显著，但不是主要影响因素
 #但如果单独对每一个网络进行分析，结果可能会不同
 
+# ==========================================================
+# Pairwise PERMANOVA between flower-shape categories
+# ==========================================================
 
+library(permute)
+
+shape_pairs <- combn(
+  unique(meta$flw_shape_revised),
+  2,
+  simplify = FALSE
+)
+
+pairwise_permanova <- lapply(shape_pairs, function(pair) {
+  
+  # Select the two flower shapes
+  keep <- meta$flw_shape_revised %in% pair
+  
+  meta_pair <- droplevels(meta[keep, ])
+  mat_pair  <- mat_numeric2[keep, , drop = FALSE]
+  
+  # Restricted permutations within networks
+  permutation_control <- how(nperm = 999)
+  setBlocks(permutation_control) <- meta_pair$Study_Network_id
+  
+  fit <- tryCatch(
+    adonis2(
+      mat_pair ~ Study_id + flw_shape_revised,
+      data = meta_pair,
+      method = "jaccard",
+      binary = TRUE,
+      permutations = permutation_control,
+      by = "margin"
+    ),
+    error = function(e) NULL
+  )
+  
+  if (is.null(fit)) {
+    return(
+      data.frame(
+        Shape_1 = pair[1],
+        Shape_2 = pair[2],
+        F_value = NA_real_,
+        R2 = NA_real_,
+        P_value = NA_real_
+      )
+    )
+  }
+  
+  shape_row <- which(
+    rownames(fit) == "flw_shape_revised"
+  )
+  
+  data.frame(
+    Shape_1 = pair[1],
+    Shape_2 = pair[2],
+    F_value = fit$F[shape_row],
+    R2 = fit$R2[shape_row],
+    P_value = fit$`Pr(>F)`[shape_row]
+  )
+})
+
+pairwise_permanova <- bind_rows(pairwise_permanova) %>%
+  mutate(
+    P_adjusted = p.adjust(
+      P_value,
+      method = "BH"
+    ),
+    Significance = case_when(
+      is.na(P_adjusted) ~ NA_character_,
+      P_adjusted < 0.001 ~ "***",
+      P_adjusted < 0.01  ~ "**",
+      P_adjusted < 0.05  ~ "*",
+      TRUE ~ "ns"
+    )
+  ) %>%
+  arrange(P_adjusted)
+
+print(pairwise_permanova)
 
 #############
 
-# 组间差异主要由大部分还是少部分网络驱动
+# (2)组间差异主要由大部分还是少部分网络驱动
 
 ###########
 adonis_res<-readRDS("data/processed/adonis_res.rds")
@@ -242,10 +319,10 @@ anova(disp)
 # ############################################
 # Figure A
 # Variation in pollinator community composition among flower shapes
-# betadisper + Tukey HSD
+# betadisper + sidak
 # ############################################
 # ############################################
-# A. Betadisper + Tukey
+# A. Betadisper + sidak
 ############################################
 library(dplyr)
 library(lme4)
@@ -305,7 +382,7 @@ emm_df <- as.data.frame(emm) %>%
   left_join(letters_df, by = "FlowerShape")
 
 # 两两 Tukey 比较结果
-pairs_res <- pairs(emm, adjust = "tukey")
+pairs_res <- pairs(emm, adjust = "sidak")
 
 # 若后续箱线图/散点图使用这些对象，再统一排序
 disp_df <- disp_df %>%
@@ -718,18 +795,18 @@ visit_group <- ggplot(plot_df,
     expand = expansion(mult = c(0, 0.04))
   ) +
   scale_fill_manual(values = group_cols, drop = FALSE) +
-  labs(x = NULL, y = "Mean proportion of pollinator visits", fill = "Pollinator group") +
+  labs(x = "Flower shape categories", y = "Mean proportion of pollinator visits", fill = "Pollinator group") +
   theme_classic(base_size = 10) +
   theme(
     axis.title.x = element_text(face = "bold", size = 11),
-    axis.title.y = element_blank(),
+    axis.title.y = element_text(face = "bold", size = 11),
     axis.text.y = element_text(color = "black", size = 9),
     axis.text.x = element_text(color = "black", size = 8),
     legend.title = element_text(face = "bold", size = 9),
     legend.text = element_text(size = 9),
     legend.position = "right",
     legend.direction = "vertical",
-    plot.margin = margin(3,5,3,3)
+    plot.margin = margin(3, 5, 3, 3)
   )
 
 visit_group
@@ -762,7 +839,7 @@ visit_group_legend <- cowplot::get_legend(
 ggsave(
   "/Chap1_TargetPlant_to_monitor/result_260723/visit_group_no_legend.png",
   visit_group_no_legend,
-  width = 4, height = 3,
+  width = 5, height = 3,
   units = "in", dpi = 600, bg = "white"
 )
 
@@ -1001,7 +1078,7 @@ ggsave(
 ###############
 
 sp_list_rare_info<-sp_list_rare%>%
-  left_join(data_interact%>%select(Plant_accepted_name,Plant_order,Plant_family,Plant_genus)%>%
+  left_join(data_interact%>%dplyr::select(Plant_accepted_name,Plant_order,Plant_family,Plant_genus)%>%
               distinct(), by = "Plant_accepted_name")
 
 sp_count_shape <- sp_list_rare_info %>%
