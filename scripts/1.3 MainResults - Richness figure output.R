@@ -551,7 +551,7 @@ panel_labels <- data.frame(
     c("Top10", "Top5", "Top3"),
     levels = c("Top10", "Top5", "Top3")
   ),
-  label = c("a", "b", "c")
+  label = c("(a)", "(b)", "(c)")
 )
 
 
@@ -894,8 +894,10 @@ ggsave(
   width = 9,
   height = 6,
   units = "in",
-  dpi = 300
+  dpi = 600,
+  bg = "white"
 )
+
 
 # ==========================================================
 # Supplementary Table S1

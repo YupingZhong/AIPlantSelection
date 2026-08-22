@@ -302,6 +302,37 @@ format_p <- function(p) {
 # ==============================================================================
 # 13. PANEL A
 # ==============================================================================
+plant_stat_label <- paste0(
+  "Plant: R = ",
+  round(
+    stats_richness$r[
+      stats_richness$Predictor == "Plant richness"
+    ],
+    2
+  ),
+  ", ",
+  format_p(
+    stats_richness$p[
+      stats_richness$Predictor == "Plant richness"
+    ]
+  )
+)
+
+pollinator_stat_label <- paste0(
+  "Pollinator: R = ",
+  round(
+    stats_richness$r[
+      stats_richness$Predictor == "Pollinator richness"
+    ],
+    2
+  ),
+  ", ",
+  format_p(
+    stats_richness$p[
+      stats_richness$Predictor == "Pollinator richness"
+    ]
+  )
+)
 
 p_richness <- ggplot(
   richness_compare,
@@ -312,15 +343,22 @@ p_richness <- ggplot(
     shape = Predictor
   )
 ) +
-  
   geom_point(
-    size = 2.4,
+    aes(size = Predictor),
     alpha = 0.75,
     position = position_jitter(
       width = 0.03,
       height = 0.4
     )
   ) +
+  
+  scale_size_manual(
+    values = c(
+      "Plant richness" = 1.6,
+      "Pollinator richness" = 1.2
+    ),
+    guide = "none"
+  )  +
   
   geom_smooth(
     method = "lm",
@@ -329,13 +367,29 @@ p_richness <- ggplot(
   ) +
   
   scale_color_manual(
-    values = richness_colors
+    values = richness_colors,
+    breaks = c(
+      "Plant richness",
+      "Pollinator richness"
+    ),
+    labels = c(
+      "Plant",
+      "Pollinator"
+    )
   ) +
   
   scale_shape_manual(
     values = c(
       "Plant richness" = 18,
       "Pollinator richness" = 15
+    ),
+    breaks = c(
+      "Plant richness",
+      "Pollinator richness"
+    ),
+    labels = c(
+      "Plant",
+      "Pollinator"
     )
   ) +
   scale_x_log10(
@@ -350,75 +404,41 @@ p_richness <- ggplot(
   
   labs(
     x = expression(bold("Richness (" * log[10] * " scale)")),
-    y = NULL,
-    color = "richness measure",
-    shape = "richness measure"
+    y = "Pollinator richness captured (%)",
+    color = NULL,
+    shape = NULL
+  ) +
+  annotate(
+    "text",
+    x = 10.5,
+    y = 13,
+    label = plant_stat_label,
+    color = richness_colors["Plant richness"],
+    hjust = 0,
+    vjust = 0,
+    size = 3.5
   ) +
   
   annotate(
     "text",
-    x = Inf,
-    y = 5,
-    hjust = 1.05,
+    x = 10.5,
+    y = 6,
+    label = pollinator_stat_label,
+    color = richness_colors["Pollinator richness"],
+    hjust = 0,
     vjust = 0,
-    label = paste0(
-      "Plant: R = ",
-      round(
-        stats_richness$r[
-          stats_richness$Predictor == "Plant richness"
-        ],
-        2
-      ),
-      ifelse(
-        stats_richness$p[
-          stats_richness$Predictor == "Plant richness"
-        ] < 0.001,
-        ", p < 0.001",
-        paste0(
-          ", p = ",
-          format.pval(
-            stats_richness$p[
-              stats_richness$Predictor == "Plant richness"
-            ],
-            digits = 2
-          )
-        )
-      ),
-      "\nPollinator: R = ",
-      round(
-        stats_richness$r[
-          stats_richness$Predictor == "Pollinator richness"
-        ],
-        2
-      ),
-      ifelse(
-        stats_richness$p[
-          stats_richness$Predictor == "Pollinator richness"
-        ] < 0.001,
-        ", p < 0.001",
-        paste0(
-          ", p = ",
-          format.pval(
-            stats_richness$p[
-              stats_richness$Predictor == "Pollinator richness"
-            ],
-            digits = 2
-          )
-        )
-      )
-    ),
-    size = 3.1
-  ) +
+    size = 3.5
+  )  +
   
-  theme_classic(base_size = 13) +
+  theme_classic(base_size = 15) +
   theme(
     axis.title = element_text(
       face = "bold",
-      size = 13
+      size = 15
     ),
     axis.text.y = element_text(
       color = "black",
-      size = 11
+      size = 13
     ),
     axis.ticks.y = element_line(
       color = "black"
@@ -430,6 +450,12 @@ p_richness <- ggplot(
 # ==============================================================================
 # 14. PANEL B
 # ==============================================================================
+nested_annotation_x <- min(
+  df_nested$Nestedness,
+  na.rm = TRUE
+) + 0.05 * diff(
+  range(df_nested$Nestedness, na.rm = TRUE)
+)
 
 p_nestedness <- ggplot(
   df_nested,
@@ -440,7 +466,7 @@ p_nestedness <- ggplot(
 ) +
   
   geom_point(
-    size = 2.4,
+    size = 1.4,
     alpha = 0.70,
     color = nestedness_color,
     position = position_jitter(
@@ -465,50 +491,39 @@ p_nestedness <- ggplot(
     limits = common_ylim,
     breaks = common_breaks
   ) +
-  
   annotate(
     "text",
-    x = Inf,
+    x = nested_annotation_x,
     y = 5,
-    hjust = 1.05,
+    hjust = 0,
     vjust = 0,
     label = paste0(
       "R = ",
       round(cor_nested$estimate, 2),
       "\n",
-      ifelse(
-        cor_nested$p.value < 0.001,
-        "p < 0.001",
-        paste0(
-          "p = ",
-          format.pval(
-            cor_nested$p.value,
-            digits = 2
-          )
-        )
-      )
+      format_p(cor_nested$p.value)
     ),
-    size = 3.1
-  ) +
+    size = 3.5
+  )  +
   
   labs(
     x = "Network nestedness",
     y = NULL
   ) +
   
-  theme_classic(base_size = 13) +
+  theme_classic(base_size = 15) +
   theme(
     axis.title.x = element_text(
       face = "bold",
-      size = 13
+      size = 15
     ),
     axis.text.x = element_text(
       color = "black",
-      size = 11
+      size = 13
     ),
     axis.text.y = element_text(
       color = "black",
-      size = 11
+      size = 13
     ),
     axis.ticks.y = element_line(
       color = "black"
@@ -567,7 +582,7 @@ p_presence <- ggplot(
   geom_jitter(
     aes(color = present_group),
     width = 0.10,
-    size = 1.6,
+    size = 1.5,
     alpha = 0.55
   ) +
   
@@ -575,26 +590,27 @@ p_presence <- ggplot(
     data = data_summary,
     aes(
       x = present_group,
-      y = 72,
-      label = sprintf(
-        "Mean = %.1f%%",
-        Mean_Percentage
-      )
+      y = 8,
+      label = paste0("n = ", n)
     ),
     inherit.aes = FALSE,
-    size = 3.1,
-    fontface = "bold"
+    size = 3.5,
+    vjust = 0
   ) +
   
   geom_text(
     data = data_summary,
     aes(
       x = present_group,
-      y = 78,
-      label = paste0("n = ", n)
+      y = 2,
+      label = sprintf(
+        "Mean = %.1f%%",
+        Mean_Percentage
+      )
     ),
     inherit.aes = FALSE,
-    size = 3
+    size = 3.5,
+    vjust = 0
   ) +
   
   annotate(
@@ -626,7 +642,7 @@ p_presence <- ggplot(
     x = 1.5,
     y = 90,
     label = sig_label,
-    size = 5,
+    size = 7,
     fontface = "bold"
   ) +
   
@@ -644,23 +660,23 @@ p_presence <- ggplot(
   ) +
   
   labs(
-    x = "Rare attractive plants in full network",
+    x = "Rare attractive plants",
     y = NULL
   ) +
   
-  theme_classic(base_size = 13) +
+  theme_classic(base_size = 15) +
   theme(
     axis.title.x = element_text(
       face = "bold",
-      size = 13
+      size = 15
     ),
     axis.text.x = element_text(
       color = "black",
-      size = 11
+      size = 13
     ),
     axis.text.y = element_text(
       color = "black",
-      size = 11
+      size = 13
     ),
     axis.ticks.y = element_line(
       color = "black"
@@ -668,19 +684,21 @@ p_presence <- ggplot(
     legend.position = "none"
   )
 
-# Show x and y axes and ticks in all three panels
-common_axis_theme <- theme(
-  panel.border = element_blank(),
+common_panel_theme <- theme(
+  # Make the plotting regions approximately square
   
-  axis.line.x = element_line(
+  
+  # Border around all four sides
+  panel.border = element_rect(
     colour = "black",
-    linewidth = 0.5
-  ),
-  axis.line.y = element_line(
-    colour = "black",
-    linewidth = 0.5
+    fill = NA,
+    linewidth = 0.6
   ),
   
+  # Prevent theme_classic axis lines from overlapping the border
+  axis.line = element_blank(),
+  
+  # Retain ticks
   axis.ticks.x = element_line(
     colour = "black",
     linewidth = 0.5
@@ -692,25 +710,26 @@ common_axis_theme <- theme(
   
   axis.text.x = element_text(
     colour = "black",
-    size = 11
+    size = 13
   ),
   axis.text.y = element_text(
     colour = "black",
-    size = 11
+    size = 13
   ),
   
-  # Give all plots identical margins
+  panel.grid = element_blank(),
+  
   plot.margin = margin(
-    t = 18,
-    r = 5,
-    b = 5,
-    l = 5
+    t = 20,
+    r = 4,
+    b = 4,
+    l = 4
   )
 )
 
-p_richness <- p_richness + common_axis_theme
-p_nestedness <- p_nestedness + common_axis_theme
-p_presence <- p_presence + common_axis_theme
+p_richness <- p_richness + common_panel_theme
+p_nestedness <- p_nestedness + common_panel_theme
+p_presence <- p_presence + common_panel_theme
 # ==============================================================================
 # 16. Main three-panel figure
 # ==============================================================================
@@ -726,66 +745,45 @@ shared_legend <- cowplot::get_legend(
       legend.margin = margin(0, 0, 0, 0)
     ) +
     guides(
-      color = guide_legend(
-        nrow = 1,
-        title.position = "left"
-      ),
-      shape = guide_legend(
-        nrow = 1,
-        title.position = "left"
-      )
+      color = guide_legend(nrow = 1),
+      shape = guide_legend(nrow = 1)
     )
 )
 
 # Three square panels without individual legends
+
 panels <- plot_grid(
   p_richness + theme(legend.position = "none"),
   p_nestedness,
   p_presence,
   ncol = 3,
-  labels = c("a", "b", "c"),
+  rel_widths = c(1, 1, 1),
+  labels = c("(a)", "(b)", "(c)"),
   label_size = 20,
   label_fontface = "bold",
   label_x = 0.01,
-  label_y = 0.995,
+  label_y = 0.997,
   hjust = 0,
-  vjust = 1,
+  vjust = 0.95,
   align = "hv",
   axis = "tblr"
 )
 
-# Shared vertical y-axis title
-y_title <- ggdraw() +
-  draw_label(
-    "Pollinator richness captured (%)",
-    angle = 90,
-    fontface = "bold",
-    size = 13
-  )
-
-# Add shared y-axis title
-panels_with_y_title <- plot_grid(
-  y_title,
-  panels,
-  ncol = 2,
-  rel_widths = c(0.06, 1)
-)
-
-# Put the legend below the figure and align it to the left
+# Left-aligned legend
 legend_left <- plot_grid(
   NULL,
   shared_legend,
   NULL,
   ncol = 3,
-  rel_widths = c(0.06, 0.55, 0.45)
+  rel_widths = c(0.07, 0.48, 0.45)
 )
 
 # Final figure
 final_factor_fig <- plot_grid(
-  panels_with_y_title,
+  panels,
   legend_left,
   ncol = 1,
-  rel_heights = c(1, 0.10)
+  rel_heights = c(1, 0.08)
 )
 
 print(final_factor_fig)
@@ -796,8 +794,8 @@ ggsave(
     "Fig_Factors_subsampling_effectiveness.png"
   ),
   final_factor_fig,
-  width = 11.5,
-  height = 4.5,
+  width = 13,
+  height = 4.6,
   units = "in",
   dpi = 600,
   bg = "white"

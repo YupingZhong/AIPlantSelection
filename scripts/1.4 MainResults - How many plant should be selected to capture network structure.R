@@ -1724,7 +1724,7 @@ combined_plot_suf <- plot_grid(
   ncol = 3,
   align = "hv",
   
-  labels = c("a", "b", "c"),
+  labels = c("(a)", "(b)", "(c)"),
   label_x = 0.01,
   label_y = 0.99,
   hjust = 0,
