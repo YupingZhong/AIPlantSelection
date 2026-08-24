@@ -416,7 +416,7 @@ p_richness <- ggplot(
     color = richness_colors["Plant richness"],
     hjust = 0,
     vjust = 0,
-    size = 3.5
+    size = 5.5
   ) +
   
   annotate(
@@ -427,14 +427,14 @@ p_richness <- ggplot(
     color = richness_colors["Pollinator richness"],
     hjust = 0,
     vjust = 0,
-    size = 3.5
+    size = 5.5
   )  +
   
-  theme_classic(base_size = 15) +
+  theme_classic(base_size = 17) +
   theme(
     axis.title = element_text(
       face = "bold",
-      size = 15
+      size = 17
     ),
     axis.text.y = element_text(
       color = "black",
@@ -503,7 +503,7 @@ p_nestedness <- ggplot(
       "\n",
       format_p(cor_nested$p.value)
     ),
-    size = 3.5
+    size = 5.5
   )  +
   
   labs(
@@ -511,11 +511,11 @@ p_nestedness <- ggplot(
     y = NULL
   ) +
   
-  theme_classic(base_size = 15) +
+  theme_classic(base_size = 17) +
   theme(
     axis.title.x = element_text(
       face = "bold",
-      size = 15
+      size = 17
     ),
     axis.text.x = element_text(
       color = "black",
@@ -576,7 +576,7 @@ p_presence <- ggplot(
     width = 0.16,
     alpha = 0.65,
     outlier.shape = NA,
-    color = "grey25"
+    color = "grey75"
   ) +
   
   geom_jitter(
@@ -594,7 +594,7 @@ p_presence <- ggplot(
       label = paste0("n = ", n)
     ),
     inherit.aes = FALSE,
-    size = 3.5,
+    size = 5.5,
     vjust = 0
   ) +
   
@@ -609,7 +609,7 @@ p_presence <- ggplot(
       )
     ),
     inherit.aes = FALSE,
-    size = 3.5,
+    size = 5.5,
     vjust = 0
   ) +
   
@@ -664,11 +664,11 @@ p_presence <- ggplot(
     y = NULL
   ) +
   
-  theme_classic(base_size = 15) +
+  theme_classic(base_size = 17) +
   theme(
     axis.title.x = element_text(
       face = "bold",
-      size = 15
+      size = 17
     ),
     axis.text.x = element_text(
       color = "black",
@@ -690,9 +690,9 @@ common_panel_theme <- theme(
   
   # Border around all four sides
   panel.border = element_rect(
-    colour = "black",
+    colour = "grey55",
     fill = NA,
-    linewidth = 0.6
+    linewidth = 1.2
   ),
   
   # Prevent theme_classic axis lines from overlapping the border
@@ -701,29 +701,29 @@ common_panel_theme <- theme(
   # Retain ticks
   axis.ticks.x = element_line(
     colour = "black",
-    linewidth = 0.5
+    linewidth = 0.6
   ),
   axis.ticks.y = element_line(
     colour = "black",
-    linewidth = 0.5
+    linewidth = 0.6
   ),
   
   axis.text.x = element_text(
     colour = "black",
-    size = 13
+    size = 15
   ),
   axis.text.y = element_text(
     colour = "black",
-    size = 13
+    size = 15
   ),
   
   panel.grid = element_blank(),
   
   plot.margin = margin(
-    t = 20,
-    r = 4,
-    b = 4,
-    l = 4
+    t = 24,
+    r = 8,
+    b = 8,
+    l = 8
   )
 )
 
@@ -742,7 +742,9 @@ shared_legend <- cowplot::get_legend(
       legend.direction = "horizontal",
       legend.justification = "left",
       legend.box.just = "left",
-      legend.margin = margin(0, 0, 0, 0)
+      legend.margin = margin(2, 0, 2, 0),
+      legend.text = element_text(size = 15),
+      legend.key.size = unit(1.1, "lines")
     ) +
     guides(
       color = guide_legend(nrow = 1),
@@ -759,7 +761,7 @@ panels <- plot_grid(
   ncol = 3,
   rel_widths = c(1, 1, 1),
   labels = c("(a)", "(b)", "(c)"),
-  label_size = 20,
+  label_size = 25,
   label_fontface = "bold",
   label_x = 0.01,
   label_y = 0.997,
@@ -783,7 +785,7 @@ final_factor_fig <- plot_grid(
   panels,
   legend_left,
   ncol = 1,
-  rel_heights = c(1, 0.08)
+  rel_heights = c(8.9, 0.43)
 )
 
 print(final_factor_fig)
@@ -794,8 +796,8 @@ ggsave(
     "Fig_Factors_subsampling_effectiveness.png"
   ),
   final_factor_fig,
-  width = 13,
-  height = 4.6,
+  width = 14,
+  height = 5,
   units = "in",
   dpi = 600,
   bg = "white"

@@ -768,7 +768,7 @@ labs(
   
   x = "Subsampling strategy",
   
-  y = "Percent of pollinator richness captured"
+  y = "pollinator richness captured (%)"
 ) +
   
   
@@ -781,6 +781,21 @@ theme_classic(
 ) +
   
   theme(
+    # Border around each facet panel
+    panel.border = element_rect(
+      colour = "grey75",
+      fill = NA,
+      linewidth = 0.7
+    ),
+    
+    # Avoid overlapping theme_classic axis lines
+    axis.line = element_blank(),
+    
+    # Space between facet panels
+    panel.spacing = unit(
+      0.8,
+      "lines"
+    ),
     
     axis.title = element_text(
       face = "bold",
@@ -799,6 +814,11 @@ theme_classic(
       size = 10
     ),
     
+    axis.ticks = element_line(
+      colour = "black",
+      linewidth = 0.5
+    ),
+    
     strip.background = element_blank(),
     
     strip.text = element_text(
@@ -807,9 +827,7 @@ theme_classic(
     ),
     
     legend.position = "bottom",
-    
     legend.box = "vertical",
-    
     legend.box.just = "center",
     
     legend.title = element_text(
@@ -820,11 +838,12 @@ theme_classic(
       size = 10
     ),
     
+    # Extra top space for a, b and c
     plot.margin = margin(
-      10,
-      10,
-      10,
-      10
+      t = 22,
+      r = 10,
+      b = 10,
+      l = 10
     )
   ) +
   
@@ -892,7 +911,7 @@ ggsave(
   "/Chap1_TargetPlant_to_monitor/result_260723/main_violin_network_size.png",
   plot = plot_violin_size,
   width = 9,
-  height = 6,
+  height = 5,
   units = "in",
   dpi = 600,
   bg = "white"

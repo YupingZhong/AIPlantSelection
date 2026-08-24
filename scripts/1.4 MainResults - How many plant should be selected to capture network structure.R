@@ -1451,8 +1451,8 @@ p_conn <- ggplot() +
   
   annotate(
     "text",
-    x = plateau_conn - 12,
-    y = max(r_curve$rho_conn, na.rm = TRUE) - 0.15,
+    x = plateau_conn - 15,
+    y = max(r_curve$rho_conn, na.rm = TRUE) - 0.07,
     label = paste0(
       "Abundant:\nn = ",
       plateau_conn
@@ -1460,7 +1460,7 @@ p_conn <- ggplot() +
     color = "#B84E22",
     vjust = 1,
     hjust = -0.1,
-    size = 3.5
+    size = 5
   ) +
   
   annotate(
@@ -1477,7 +1477,7 @@ p_conn <- ggplot() +
     color = "grey50",
     vjust = 1,
     hjust = 0,
-    size = 3.5
+    size = 5
   ) +
   
   labs(
@@ -1486,7 +1486,7 @@ p_conn <- ggplot() +
     y = NULL
   ) +
   
-  theme_classic(base_size = 13) +
+  theme_classic(base_size = 15) +
   
   theme(
     plot.title = element_text(
@@ -1494,7 +1494,7 @@ p_conn <- ggplot() +
       face = "bold"
     ),
     axis.text = element_text(size = 14),
-    axis.title = element_text(size = 12)
+    axis.title = element_text(size = 14)
   )
 
 # =============================================================================
@@ -1553,8 +1553,8 @@ geom_point(
   
   annotate(
     "text",
-    x = plateau_nodf - 12,
-    y = max(r_curve$rho_nodf, na.rm = TRUE) - 0.15,
+    x = plateau_nodf - 15,
+    y = max(r_curve$rho_nodf, na.rm = TRUE) - 0.07,
     label = paste0(
       "Abundant:\nn = ",
       plateau_nodf
@@ -1562,7 +1562,7 @@ geom_point(
     color = "#355A9A",
     vjust = 1,
     hjust = -0.1,
-    size = 3.5
+    size = 5
   ) +
   
   annotate(
@@ -1579,7 +1579,7 @@ geom_point(
     color = "grey50",
     vjust = 1,
     hjust = -0.1,
-    size = 3.5
+    size = 5
   ) +
   
   labs(
@@ -1588,7 +1588,7 @@ geom_point(
     y = NULL
   ) +
   
-  theme_classic(base_size = 13) +
+  theme_classic(base_size = 15) +
   
   theme(
     plot.title = element_text(
@@ -1596,7 +1596,7 @@ geom_point(
       face = "bold"
     ),
     axis.text = element_text(size = 14),
-    axis.title = element_text(size = 12)
+    axis.title = element_text(size = 14)
   )
 
 # =============================================================================
@@ -1655,8 +1655,8 @@ p_H2 <- ggplot() +
   
   annotate(
     "text",
-    x = plateau_H2 - 12,
-    y = max(r_curve$rho_H2, na.rm = TRUE) - 0.15,
+    x = plateau_H2 - 15,
+    y = max(r_curve$rho_H2, na.rm = TRUE) - 0.07,
     label = paste0(
       "Abundant:\nn = ",
       plateau_H2
@@ -1664,7 +1664,7 @@ p_H2 <- ggplot() +
     color = "#6A4C93",
     vjust = 1,
     hjust = -0.1,
-    size = 3.5
+    size = 5
   ) +
   
   annotate(
@@ -1681,7 +1681,7 @@ p_H2 <- ggplot() +
     color = "grey50",
     vjust = 1,
     hjust = -0.1,
-    size = 3.5
+    size = 5.5
   ) +
   
   labs(
@@ -1690,7 +1690,7 @@ p_H2 <- ggplot() +
     y = NULL
   ) +
   
-  theme_classic(base_size = 13) +
+  theme_classic(base_size = 15) +
   
   theme(
     plot.title = element_text(
@@ -1698,10 +1698,64 @@ p_H2 <- ggplot() +
       face = "bold"
     ),
     axis.text = element_text(size = 14),
-    axis.title = element_text(size = 12)
+    axis.title = element_text(size = 14)
   )
 
+# =============================================================================
+# Common theme for all three panels
+# =============================================================================
 
+common_suf_theme <- theme(
+  # Full border around each panel
+  panel.border = element_rect(
+    colour = "black",
+    fill = NA,
+    linewidth = 0.9
+  ),
+  
+  # Avoid overlapping theme_classic axis lines
+  axis.line = element_blank(),
+  
+  # Ticks
+  axis.ticks = element_line(
+    colour = "black",
+    linewidth = 0.6
+  ),
+  
+  # Axis values
+  axis.text = element_text(
+    colour = "black",
+    size = 15
+  ),
+  
+  # Axis titles
+  axis.title = element_text(
+    colour = "black",
+    face = "bold",
+    size = 17
+  ),
+  
+  # Panel titles
+  plot.title = element_text(
+    hjust = 0.5,
+    face = "bold",
+    size = 17
+  ),
+  
+  panel.grid = element_blank(),
+  
+  # Space above for panel labels
+  plot.margin = margin(
+    t = 24,
+    r = 8,
+    b = 8,
+    l = 8
+  )
+)
+
+p_conn <- p_conn + common_suf_theme
+p_nodf <- p_nodf + common_suf_theme
+p_H2 <- p_H2 + common_suf_theme
 # =============================================================================
 # 25. Display plots
 # =============================================================================
@@ -1717,38 +1771,41 @@ p_H2
 # 26. Combine plots
 # =============================================================================
 
-combined_plot_suf <- plot_grid(
+combined_panels <- plot_grid(
   p_conn,
   p_nodf,
   p_H2,
   ncol = 3,
+  rel_widths = c(1, 1, 1),
   align = "hv",
+  axis = "tblr",
   
   labels = c("(a)", "(b)", "(c)"),
   label_x = 0.01,
-  label_y = 0.99,
+  label_y = 0.995,
   hjust = 0,
   vjust = 1,
-  label_size = 18,
+  label_size = 22,
   label_fontface = "bold"
 )
 
 y_title <- ggdraw() +
   draw_label(
-    "Across-network Spearman's ρ",
+    "Across-network Spearman's \u03c1",
     angle = 90,
     fontface = "bold",
-    size = 14
+    size = 17
   )
 
 combined_plot_suf <- plot_grid(
   y_title,
-  combined_plot_suf,
+  combined_panels,
   ncol = 2,
-  rel_widths = c(0.05, 1)
+  rel_widths = c(0.055, 1)
 )
 
-combined_plot_suf
+print(combined_plot_suf)
+
 
 
 
@@ -1759,10 +1816,11 @@ combined_plot_suf
 ggsave(
   "D:/Chap1_TargetPlant_to_monitor/result_260723/spearman_sufficient_n_plant_network_metrics.png",
   combined_plot_suf,
-  width = 11.5,
-  height = 3.8,
+  width = 13,
+  height = 4.7,
   units = "in",
-  dpi = 600
+  dpi = 600,
+  bg = "white"
 )
 
 # =============================================================================
