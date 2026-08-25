@@ -692,7 +692,7 @@ common_panel_theme <- theme(
   panel.border = element_rect(
     colour = "grey55",
     fill = NA,
-    linewidth = 1.2
+    linewidth = 2.2
   ),
   
   # Prevent theme_classic axis lines from overlapping the border

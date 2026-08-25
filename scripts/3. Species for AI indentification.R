@@ -125,7 +125,7 @@ pollinator_importance_A <- Interaction_data_pol_sp %>%
     .groups = "drop"
   ) %>%
   # 补全所有组合（包括0交互）
-  complete(Pollinator_accepted_name, Study_Network_id,
+  tidyr::complete(Pollinator_accepted_name, Study_Network_id,
            fill = list(relative_abundance = 0)) %>%
   group_by(Pollinator_accepted_name) %>%
   summarize(
@@ -416,23 +416,25 @@ labs(
 # Theme
 # ----------------------------------------------------------------------------
 
-theme_classic(
-  
-  base_size = 12
-  
-) +
-  
-  theme(
+theme_classic(base_size = 12) +
+theme( 
+      # 四周边框
+      panel.border = element_rect(
+      colour = "grey65",
+      fill = NA,
+      linewidth = 0.9
+    ),
+    axis.line = element_blank(),
     
     axis.title.x =
       element_text(
-        face = "plain",
+        face = "bold",
         size = 13
       ),
     
     axis.title.y =
       element_text(
-        face = "plain",
+        face = "bold",
         size = 13
       ),
     
@@ -451,13 +453,7 @@ theme_classic(
     legend.position =
       "none",
     
-    plot.margin =
-      margin(
-        5,
-        5,
-        5,
-        5
-      )
+    plot.margin = margin(8, 8, 8, 8)
     
   )
 
