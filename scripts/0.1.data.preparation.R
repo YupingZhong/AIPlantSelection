@@ -37,13 +37,13 @@ metadata <- readRDS("data/raw/Interaction_data_published.rds") %>%
 meta_count <- readRDS("data/raw/Flower_counts_published.rds") #The EuPPollNet flower data
 
 species_correct <- read.csv("data/raw/species_checked_wof.csv") %>%
-  select(WOF_name,original_name)%>%
+  dplyr::select(WOF_name,original_name)%>%
   mutate(Plant_species = original_name)
 
 traits <- read.csv("data/processed/merge.trait.csv", header = TRUE, fileEncoding = "UTF-8")
 
 plant_unit <- read.csv("data/raw/plant_sampling_unit.csv") %>%
-  select("Study_id","Flower.sampling.methods")
+  dplyr::select("Study_id","Flower.sampling.methods")
 
 # ==========================================================
 # Clean plant names
@@ -87,7 +87,7 @@ meta_count <- meta_count %>%
       n_words >= 2,
       str_c(word(Plant_species, 1), word(Plant_species, 2), sep = " "),  # 前两个词
       Plant_species)) %>% # 只有一个词则保留
-  select(-n_words)  %>%
+  dplyr::select(-n_words)  %>%
   mutate(
     Plant_species = str_remove(Plant_species, "/$"),
     Plant_species = str_squish(Plant_species)  # 去掉尾部多余空格
@@ -96,9 +96,9 @@ meta_count <- meta_count %>%
 #1.1 unify plant name and merge the interaction data and flower data
 
 meta_count <- meta_count %>%
-  left_join(species_correct %>% select(Plant_species, WOF_name), by = "Plant_species") %>%
+  left_join(species_correct %>% dplyr::select(Plant_species, WOF_name), by = "Plant_species") %>%
   mutate(Plant_species = coalesce(WOF_name, Plant_species)) %>%  # 如果有对应 WOF_name 就替换
-  select(-WOF_name)  # 去掉临时列
+  dplyr::select(-WOF_name)  # 去掉临时列
 
 ##########
 # Site sampled in multiple years should be seperated
@@ -203,11 +203,11 @@ length(unique(data_count_scaled$Study_id))# 36
 ###(1) Remove -more than 25% plant names in the interaction data are not in the plant list
 ##To check how many records doesn't merge
 plant_inter <- data_interact %>% 
-  select(Study_Network_id,Plant_original_name) %>%
+  dplyr::select(Study_Network_id,Plant_original_name) %>%
   distinct()
 
 plant_flower <- data_count_scaled %>% 
-  select(Study_Network_id,Plant_species) %>% 
+  dplyr::select(Study_Network_id,Plant_species) %>% 
   distinct()
 
 # 清理 plant_inter
@@ -218,7 +218,7 @@ plant_inter <- plant_inter %>%
 
 # 清理 plant_flower
 plant_flower <- data_count_scaled %>%
-  select(Study_Network_id, Plant_species, Flower_count) %>%
+  dplyr::select(Study_Network_id, Plant_species, Flower_count) %>%
   distinct() %>%
   na.omit() %>%
   mutate(
@@ -268,7 +268,7 @@ tail_data <- plant_visit %>% filter(plant_visit_time > 500)
 p_main <- ggplot(main_data, aes(x = plant_visit_time, fill = flag)) +
   geom_histogram(binwidth = 10, color = "black") +
   scale_fill_manual(values = c(
-    "TRUE" = "orange",
+    "TRUE" = "#E9C46A",
     "FALSE" = "#66C2A5")) +
   labs(
     x = "Total interactions per network (≤500)",
@@ -277,6 +277,8 @@ p_main <- ggplot(main_data, aes(x = plant_visit_time, fill = flag)) +
   ) +
   theme_classic() +   #先放主题
   theme(
+    panel.border = element_rect(colour = "grey55", fill = NA, linewidth = 0.6),
+    axis.line = element_blank(),
     legend.position = "bottom") +
   guides(
     fill = guide_legend(override.aes = list(size = 5)))
@@ -294,7 +296,7 @@ histogram_1 <- ggdraw() +
 
 print(histogram_1)#750*350
 
-#ggsave("/Chap1_TargetPlant_to_monitor/result_260526/hist1.png", histogram_1, width = 7.5, height = 3.5, units = "in", dpi = 300)
+ggsave("/Chap1_TargetPlant_to_monitor/result_260723/hist1.png", histogram_1, width = 7.5, height = 3.5, units = "in", dpi = 600)
 
 ## filtering
 data_interact<-data_interact%>%
@@ -333,7 +335,7 @@ histogram_2 <- ggplot(
     color = "black") +
   scale_fill_manual(
     values = c(
-      "TRUE" = "orange",
+      "TRUE" = "#E9C46A",
       "FALSE" = "#66C2A5")) +
   guides(
     fill = guide_legend(override.aes = list(size = 5))) +
@@ -343,11 +345,13 @@ histogram_2 <- ggplot(
     fill = "Low richness (≤10)") +
   theme_classic() +   #和 p_main 一致
   theme(
+    panel.border = element_rect(colour = "grey55", fill = NA, linewidth = 0.6),
+    axis.line = element_blank(),
     legend.position = "bottom")   #一致
 
 print(histogram_2)#750*350
 
-#ggsave("/Chap1_TargetPlant_to_monitor/result_260526/hist2.png", histogram_2, width = 7.5, height = 3.5, units = "in", dpi = 300)
+ggsave("/Chap1_TargetPlant_to_monitor/result_260723/hist2.png", histogram_2, width = 7.5, height = 3.5, units = "in", dpi = 600)
 
 few_sp <- data_interact %>%
   filter(!is.na(Plant_accepted_name)) %>%       # 排除 NA
@@ -402,11 +406,11 @@ final_study_id <- unique(data_interact$Study_id)
 # ==========================================================
 
 Plant_method <- data_count_scaled %>%
-  select("Study_id","Network_id",  "Units","Comments" )%>%
+  dplyr::select("Study_id","Network_id",  "Units","Comments" )%>%
   distinct()
 
 uniq<-Plant_method%>%
-  select("Study_id","Units" ) %>%
+  dplyr::select("Study_id","Units" ) %>%
   distinct()
 unique(uniq$Study_id)
 

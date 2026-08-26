@@ -141,15 +141,24 @@ p <- ggplot(order_plot_df,
     y = "Number of networks",
     fill = NULL
   ) +
-  theme_classic(base_size = 12, base_family = "Arial") +
+  theme_classic(base_size = 13, base_family = "Arial") +
   theme(
+    
+    panel.border = element_rect(
+      colour = "grey55",
+      fill = NA,
+      linewidth = 0.6
+    ),
+    
+    # Avoid overlapping theme_classic axis lines
+    axis.line = element_blank(),
     axis.text.x = element_text(
       angle = 45, hjust = 1, vjust = 1,
       colour = "black"
     ),
     axis.text.y = element_text(colour = "black"),
-    axis.title.y = element_text(margin = margin(r = 8)),
-    axis.line = element_line(linewidth = 0.4),
+    axis.title.y = element_text(face = "bold",margin = margin(r = 8)),
+    # axis.line = element_line(linewidth = 0.4),
     axis.ticks = element_line(linewidth = 0.4),
     axis.ticks.length = unit(2, "pt"),
     legend.position = "bottom",
@@ -164,7 +173,7 @@ p
 
 ggsave(
   "/Chap1_TargetPlant_to_monitor/result_260723/order_Pollinator_missed_bar.png",
-  p, width = 9, height = 8, dpi = 300, bg = "white"
+  p, width = 9.5, height = 8, dpi = 600, bg = "white"
 )
 
 

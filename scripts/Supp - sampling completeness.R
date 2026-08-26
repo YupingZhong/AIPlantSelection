@@ -70,6 +70,7 @@ sampling_c <- ggplot(coverage_results, aes(x = coverage_est)) +
   ) +
   theme_classic(base_size = 12) +
   theme(
+    panel.border = element_rect(colour = "grey55", fill = NA, linewidth = 0.6),
     axis.title = element_text(face = "bold", size = 15),
     axis.text = element_text(color = "black", size = 12),
     axis.line = element_line(linewidth = 0.4),

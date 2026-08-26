@@ -1708,9 +1708,9 @@ p_H2 <- ggplot() +
 common_suf_theme <- theme(
   # Full border around each panel
   panel.border = element_rect(
-    colour = "black",
+    colour = "grey55",
     fill = NA,
-    linewidth = 0.9
+    linewidth = 2
   ),
   
   # Avoid overlapping theme_classic axis lines

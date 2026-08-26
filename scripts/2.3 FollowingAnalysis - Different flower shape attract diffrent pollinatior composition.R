@@ -321,9 +321,7 @@ anova(disp)
 # Variation in pollinator community composition among flower shapes
 # betadisper + sidak
 # ############################################
-# ############################################
-# A. Betadisper + sidak
-############################################
+
 library(dplyr)
 library(lme4)
 library(lmerTest)
@@ -359,10 +357,10 @@ shape_order <- as.data.frame(emm) %>%
   arrange(emmean) %>%
   pull(FlowerShape)
 
-# Tukey 字母分组
+# sidak 字母分组
 letters_df <- multcomp::cld(
   emm,
-  adjust = "tukey",
+  adjust = "sidak",
   Letters = letters,
   sort = FALSE
 ) %>%
@@ -381,7 +379,7 @@ emm_df <- as.data.frame(emm) %>%
   ) %>%
   left_join(letters_df, by = "FlowerShape")
 
-# 两两 Tukey 比较结果
+# 两两比较结果
 pairs_res <- pairs(emm, adjust = "sidak")
 
 # 若后续箱线图/散点图使用这些对象，再统一排序
@@ -672,8 +670,7 @@ data_functional <- data_merge %>%
     TRUE                                                      ~ "Other"
   ))
 
-saveRDS(data_merge,"data_merge0713.rds")
-a<-data_functional%>%filter(Pollinator_order == "Coleoptera")
+
 
 # 检查 Other 里还有什么
 data_functional %>%
@@ -798,6 +795,12 @@ visit_group <- ggplot(plot_df,
   labs(x = "Flower shape categories", y = "Mean proportion of pollinator visits", fill = "Pollinator group") +
   theme_classic(base_size = 10) +
   theme(
+    panel.border = element_rect(
+      colour = "grey55",
+      fill = NA,
+      linewidth = 0.9
+    ),
+    axis.line = element_blank(),
     axis.title.x = element_text(face = "bold", size = 11),
     axis.title.y = element_text(face = "bold", size = 11),
     axis.text.y = element_text(color = "black", size = 9),
@@ -811,8 +814,8 @@ visit_group <- ggplot(plot_df,
 
 visit_group
 
-ggsave("/Chap1_TargetPlant_to_monitor/result_260723/visit_larger_group_sum.png", visit_group, width = 5, 
-       height = 3.0, units = "in", dpi = 600, bg = "white")  
+#ggsave("/Chap1_TargetPlant_to_monitor/result_260723/visit_larger_group_sum.png", visit_group, width = 5, 
+#       height = 3.0, units = "in", dpi = 600, bg = "white")  
 
 # 不带图例的主体图
 visit_group_no_legend <- visit_group +
@@ -971,6 +974,12 @@ pA <- ggplot(
   
   theme_classic(base_size = 10) +
   theme(
+    panel.border = element_rect(
+      colour = "grey55",
+      fill = NA,
+      linewidth = 0.5
+    ),
+    axis.line = element_blank(),
     axis.title.x = element_text(
       face = "bold",
       size = 11
@@ -978,7 +987,6 @@ pA <- ggplot(
     axis.title.y = element_blank(),
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
-    axis.line.y = element_blank(),
     axis.text.x = element_text(
       color = "black",
       size = 9
@@ -987,6 +995,19 @@ pA <- ggplot(
   )
 
 pA
+
+
+ggsave(
+  "/Chap1_TargetPlant_to_monitor/result_260723/flower_shape_beta_partition_A.png",
+  pA,
+  width = 2.8,
+  height = 3.0,
+  dpi = 600,
+  bg = "white"
+)
+
+
+
 # ############################################
 # # Panel B
 # ############################################
@@ -1054,21 +1075,6 @@ pA
 #   bg = "white"
 # )
 # 
-
-ggsave(
-  "/Chap1_TargetPlant_to_monitor/result_260723/flower_shape_beta_partition_A.png",
-  pA,
-  width = 2.8,
-  height = 3.0,
-  dpi = 600,
-  bg = "white"
-)
-
-
-
-
-
-
 
 
 ###############

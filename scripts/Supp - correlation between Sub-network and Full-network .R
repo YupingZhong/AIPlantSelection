@@ -68,24 +68,41 @@ my_colors <- c(
 ############################################################
 
 base_theme <- theme_classic(
-  base_size = 12
+  base_size = 21
 ) +
   theme(
+    
+    panel.border = element_rect(
+      colour = "grey55",
+      fill = NA,
+      linewidth = 0.6
+    ),
+    
+    # Avoid overlapping theme_classic axis lines
+    axis.line = element_blank(),
+    
+    plot.tag = element_text(
+      face = "bold",
+      size = 20,
+      hjust = 0
+    ),
+    
+    plot.tag.position = c(0.01, 0.99),
     
     plot.title = element_text(
       hjust = 0.5,
       face = "bold",
-      size = 11
+      size = 20
     ),
     
     axis.title = element_text(
       face = "bold",
-      size = 12
+      size = 20
     ),
     
     axis.text = element_text(
       color = "black",
-      size = 11
+      size = 20
     ),
     
     legend.position = "none",
@@ -199,12 +216,13 @@ plot_metric <- function(
     group_col,
     linetype_df,
     title,
+    tag = NULL,
     x_label,
     y_label,
     y_limits,
     jitter_width = 0.02,
     jitter_height = 0.2,
-    cor_label_x = "left",
+    cor_label_x = "right",
     cor_label_y = NULL
 ) {
   
@@ -224,13 +242,11 @@ plot_metric <- function(
   # --------------------------------------------------------
   
   if (is.null(cor_label_y)) {
-    
     cor_label_y <- seq(
-      0.98,
-      0.98 - 0.04 * (n_group - 1),
+      0.30,
+      0.14,
       length.out = n_group
     )
-    
   }
   
   
@@ -320,22 +336,16 @@ plot_metric <- function(
   ########################################################
   
   stat_cor(
-    
     aes(
       group = .data[[group_col]],
       color = .data[[group_col]]
     ),
-    
     method = "spearman",
-    
     cor.coef.name = "rho",
-    
     size = 3.5,
-    
-    label.x.npc = cor_label_x,
-    
+    label.x.npc = 0.97,
     label.y.npc = cor_label_y,
-    
+    hjust = 1,
     output.type = "expression"
   ) +
     
@@ -365,13 +375,11 @@ plot_metric <- function(
   ########################################################
   
   labs(
-    
+    tag = tag,
     title = title,
-    
     x = x_label,
-    
     y = y_label
-  ) +
+  )+
     
     
     ########################################################
@@ -509,13 +517,15 @@ p_nested_abun <- plot_metric(
   
   group_col = "Level",
   
+  cor_label_x = 0.97,
+  
   linetype_df = nested_abun_sig,
   
-  title = "a. Abundance-based",
+  title = "(a) Abundance-based",
   
-  x_label = "NODF of Full Network",
+  x_label = "Full network NODF",
   
-  y_label = "NODF in Subnetwork",
+  y_label = "Sub-network NODF",
   
   y_limits = c(
     0,
@@ -610,11 +620,11 @@ p_nested_flw <- plot_metric(
   
   linetype_df = nested_flw_sig,
   
-  title = "b. Abundance + flower shape",
+  title = "(b) Abundance + flower shape",
   
-  x_label = "NODF of Full Network",
+  x_label = "Full network NODF",
   
-  y_label = "NODF in Subnetwork",
+  y_label = "Sub-network NODF",
   
   y_limits = c(
     0,
@@ -702,11 +712,11 @@ p_nested_phylo <- plot_metric(
   
   linetype_df = nested_phylo_sig,
   
-  title = "c. Phylogenetic",
+  title = "(c) Phylogenetic",
   
-  x_label = "NODF of Full Network",
+  x_label = "Full network NODF",
   
-  y_label = "NODF in Subnetwork",
+  y_label = "Sub-network NODF",
   
   y_limits = c(
     0,
@@ -794,11 +804,11 @@ p_nested_random <- plot_metric(
   
   linetype_df = random_nodf_sig,
   
-  title = "d. Random",
+  title = "(d) Random",
   
-  x_label = "NODF of Full Network",
+  x_label = "Full network NODF",
   
-  y_label = "NODF in Subnetwork",
+  y_label = "Sub-network NODF",
   
   y_limits = c(
     0,
@@ -807,9 +817,7 @@ p_nested_random <- plot_metric(
   
   jitter_width = 0.02,
   
-  jitter_height = 0.2,
-  
-  cor_label_x = 0.33
+  jitter_height = 0.2
 )
 
 
@@ -895,11 +903,12 @@ p_conn_abun <- plot_metric(
   
   linetype_df = conn_abun_sig,
   
-  title = "a. Abundance-based",
+  tag = "(a)",
+  title = "Abundance-based",
   
-  x_label = "Connectance of Full Network",
+  x_label = "Full network connectance",
   
-  y_label = "Connectance in Subnetwork",
+  y_label = "Sub-network connectance",
   
   y_limits = c(
     0,
@@ -994,11 +1003,12 @@ p_conn_flw <- plot_metric(
   
   linetype_df = conn_flw_sig,
   
-  title = "b. Abundance + flower shape",
+  tag = "(b)",
+  title = "Abundance + flower shape",
   
-  x_label = "Connectance of Full Network",
+  x_label = "Full network connectance",
   
-  y_label = "Connectance in Subnetwork",
+  y_label = "Sub-network connectance",
   
   y_limits = c(
     0,
@@ -1086,11 +1096,12 @@ p_conn_phylo <- plot_metric(
   
   linetype_df = conn_phylo_sig,
   
-  title = "c. Phylogenetic",
+  tag = "(c)",
+  title = "Phylogenetic distance",
   
-  x_label = "Connectance of Full Network",
+  x_label = "Full network connectance",
   
-  y_label = "Connectance in Subnetwork",
+  y_label = "Sub-network connectance",
   
   y_limits = c(
     0,
@@ -1178,11 +1189,12 @@ p_conn_random <- plot_metric(
   
   linetype_df = random_conn_sig,
   
-  title = "d. Random",
+  tag = "(d)",
+  title = "Random",
   
-  x_label = "Connectance of Full Network",
+  x_label = "Full network connectance",
   
-  y_label = "Connectance in Subnetwork",
+  y_label = "Sub-network connectance",
   
   y_limits = c(
     0,
@@ -1191,9 +1203,7 @@ p_conn_random <- plot_metric(
   
   jitter_width = 0.005,
   
-  jitter_height = 0.005,
-  
-  cor_label_x = 0.33
+  jitter_height = 0.005
 )
 
 
@@ -1279,11 +1289,10 @@ p_H2_abun <- plot_metric(
   
   linetype_df = H2_abun_sig,
   
-  title = "a. Abundance-based",
+  title = "(a) Abundance-based",
   
-  x_label = "H2 of Full Network",
-  
-  y_label = "H2 in Subnetwork",
+  x_label = expression(bold("Full network") ~ bold(H[2]^minute)),
+  y_label = expression(bold("Sub-network") ~ bold(H[2]^minute)),
   
   y_limits = c(
     0,
@@ -1378,11 +1387,10 @@ p_H2_flw <- plot_metric(
   
   linetype_df = H2_flw_sig,
   
-  title = "b. Abundance + flower shape",
+  title = "(b) Abundance + flower shape",
   
-  x_label = "H2 of Full Network",
-  
-  y_label = "H2 in Subnetwork",
+  x_label = expression(bold("Full network") ~ bold(H[2]^minute)),
+  y_label = expression(bold("Sub-network") ~ bold(H[2]^minute)),
   
   y_limits = c(
     0,
@@ -1470,11 +1478,10 @@ p_H2_phylo <- plot_metric(
   
   linetype_df = H2_phylo_sig,
   
-  title = "c. Phylogenetic",
+  title = "(c)  Phylogenetic distance",
   
-  x_label = "H2 of Full Network",
-  
-  y_label = "H2 in Subnetwork",
+  x_label = expression(bold("Full network") ~ bold(H[2]^minute)),
+  y_label = expression(bold("Sub-network") ~ bold(H[2]^minute)),
   
   y_limits = c(
     0,
@@ -1562,11 +1569,10 @@ p_H2_random <- plot_metric(
   
   linetype_df = random_H2_sig,
   
-  title = "d. Random",
+  title = "(d) Random",
   
-  x_label = "H2 of Full Network",
-  
-  y_label = "H2 in Subnetwork",
+  x_label = expression(bold("Full network") ~ bold(H[2]^minute)),
+  y_label = expression(bold("Sub-network") ~ bold(H[2]^minute)),
   
   y_limits = c(
     0,
@@ -1575,12 +1581,19 @@ p_H2_random <- plot_metric(
   
   jitter_width = 0.005,
   
-  jitter_height = 0.005,
-  
-  cor_label_x = 0.33
+  jitter_height = 0.005
 )
 
+# Only retain subplot titles in the first row
+p_nested_abun   <- p_nested_abun   + labs(title = " ", tag = NULL)
+p_nested_flw    <- p_nested_flw    + labs(title = " ", tag = NULL)
+p_nested_phylo  <- p_nested_phylo  + labs(title = " ", tag = NULL)
+p_nested_random <- p_nested_random + labs(title = " ", tag = NULL)
 
+p_H2_abun   <- p_H2_abun   + labs(title = " ", tag = NULL)
+p_H2_flw    <- p_H2_flw    + labs(title = " ", tag = NULL)
+p_H2_phylo  <- p_H2_phylo  + labs(title = " ", tag = NULL)
+p_H2_random <- p_H2_random + labs(title = " ", tag = NULL)
 ############################################################
 # 19. Arrange NODF row
 ############################################################
@@ -1748,11 +1761,11 @@ legend_plot <- ggplot(
     legend.position = "bottom",
     
     legend.title = element_text(
-      size = 11
+      size = 18
     ),
     
     legend.text = element_text(
-      size = 10
+      size = 18
     )
   )
 
@@ -1806,10 +1819,10 @@ ggsave(
   
   width = 18,
   
-  height = 13,
+  height = 13.5,
   
   units = "in",
   
-  dpi = 300
+  dpi = 600
 )
 

@@ -420,7 +420,7 @@ theme_classic(base_size = 12) +
 theme( 
       # 四周边框
       panel.border = element_rect(
-      colour = "grey65",
+      colour = "grey55",
       fill = NA,
       linewidth = 0.9
     ),
@@ -540,7 +540,7 @@ library(cowplot)
 curve_color <- "#F1C453"       # 金黄色：累计曲线
 highlight_color <- "#5A8BD4"   # 蓝色：95% 阈值与文字
 
-plot_order_accum_A <- function(ord, show_y_title = TRUE) {
+plot_order_accum_A <- function(ord, panel_label,show_y_title = TRUE) {
   
   df <- pollinator_by_order_A %>%
     filter(Pollinator_order == ord)
@@ -584,6 +584,7 @@ plot_order_accum_A <- function(ord, show_y_title = TRUE) {
       size = 4.5
     ) +
     labs(
+      tag = panel_label,
       title = sprintf("%s (n = %d)", ord, n_sp_total),
       x = "Pollinator species identified",
       y = if (show_y_title) {
@@ -598,27 +599,61 @@ plot_order_accum_A <- function(ord, show_y_title = TRUE) {
     ) +
     theme_classic(base_size = 12) +
     theme(
-      plot.title = element_text(face = "bold.italic", size = 13),
-      axis.title.x = element_text(size = 12),
-      axis.title.y = element_text(size = 12),
-      axis.text = element_text(colour = "black", size = 11),
+      
+      panel.border = element_rect(
+        colour = "grey55",
+        fill = NA,
+        linewidth = 0.6
+      ),
+      axis.line = element_blank(),
+      
+      plot.title = element_text(
+        face = "bold.italic",
+        size = 13,
+        hjust = 0.5
+      ),
+      
+      plot.tag = element_text(
+        face = "bold",
+        size = 14,
+        hjust = 0
+      ),
+      
+      plot.tag.position = "topleft",
+      
+      axis.title.x = element_text(
+        face = "bold",
+        size = 12
+      ),
+      
+      axis.title.y = element_text(
+        face = "bold",
+        size = 12
+      ),
+      
+      axis.text = element_text(
+        colour = "black",
+        size = 11
+      ),
+      
       plot.margin = margin(5, 12, 5, 5)
     )
 }
 
 plots_list <- lapply(seq_along(orders_to_plot), function(i) {
+  
   plot_order_accum_A(
     ord = orders_to_plot[i],
+    panel_label = paste0("(", letters[i], ")"),
     show_y_title = i %% 3 == 1
   )
+  
 })
 
 supp_fig_A <- plot_grid(
   plotlist = plots_list,
   ncol = 3,
-  nrow = 2,
-  labels = letters[seq_along(orders_to_plot)],
-  label_size = 16
+  nrow = 2
 )
 
 print(supp_fig_A)
@@ -626,8 +661,8 @@ print(supp_fig_A)
 ggsave(
   "/Chap1_TargetPlant_to_monitor/result_260723/pollinator_accumulation_by_order_A.png",
   supp_fig_A,
-  width = 10,
-  height = 6.5,
+  width = 11,
+  height = 7,
   units = "in",
   dpi = 600,
   bg = "white"

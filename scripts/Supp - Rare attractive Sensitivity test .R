@@ -10,120 +10,50 @@
 ################################################################################
 
 
-# ==============================================================================
-# 1. Libraries
-# ==============================================================================
-
 library(dplyr)
 library(ggplot2)
 library(cowplot)
 
-
-# ==============================================================================
-# 2. Paths
-# ==============================================================================
-
+# Paths and data
 data_dir <- "data/processed"
-
 result_dir <- "/Chap1_TargetPlant_to_monitor/result_260723"
+dir.create(result_dir, recursive = TRUE, showWarnings = FALSE)
 
-dir.create(
-  result_dir,
-  recursive = TRUE,
-  showWarnings = FALSE
-)
+data_combined_all <- readRDS(file.path(data_dir, "H2_data_combined_all.rds"))
+model_summary <- readRDS(file.path(data_dir, "H2_model_summary.rds"))
+sensitivity_results <- readRDS(file.path(data_dir, "H2_sensitivity_results.rds"))
 
-
-# ==============================================================================
-# 3. Load H2 results
-# ==============================================================================
-
-data_combined_all <- readRDS(
-  file.path(
-    data_dir,
-    "H2_data_combined_all.rds"
-  )
-)
-
-model_summary <- readRDS(
-  file.path(
-    data_dir,
-    "H2_model_summary.rds"
-  )
-)
-
-sensitivity_results <- readRDS(
-  file.path(
-    data_dir,
-    "H2_sensitivity_results.rds"
-  )
-)
-
-
-# ==============================================================================
-# 4. Common theme
-# ==============================================================================
-
-theme_sensitivity <- theme_classic(
-  base_size = 12
-) +
+# Shared panel style
+theme_sensitivity <- theme_classic(base_size = 12) +
   theme(
-    axis.title = element_text(
-      face = "bold"
-    ),
-    axis.text = element_text(
-      color = "black"
-    ),
+    panel.border = element_rect(colour = "grey55", fill = NA, linewidth = 0.6),
+    axis.line = element_blank(),
+    axis.title = element_text(face = "bold", size = 12),
+    axis.text = element_text(colour = "black", size = 10),
     legend.position = "bottom",
-    plot.margin = margin(
-      5,
-      5,
-      5,
-      5
-    )
+    plot.tag = element_text(
+      face = "bold",
+      size = 14,
+      hjust = 0,
+      vjust = 1,
+      margin = margin(b = 4)
+    ),
+    plot.tag.position = "topleft",
+    plot.margin = margin(8, 8, 5, 5)
   )
 
-
-# ==============================================================================
-# 5. FIGURE 1
-#    Abundance vs observed richness capture
-# ==============================================================================
-
+# (a) Abundance versus observed richness capture
 r2_label <- paste0(
-  "Marginal R² = ",
-  round(
-    model_summary$Marginal_R2,
-    2
-  ),
-  "\nConditional R² = ",
-  round(
-    model_summary$Conditional_R2,
-    2
-  )
+  "Marginal R² = ", round(model_summary$Marginal_R2, 2),
+  "\nConditional R² = ", round(model_summary$Conditional_R2, 2)
 )
-
 
 fig1_relation <- ggplot(
   data_combined_all,
-  aes(
-    x = Abundance_scaled,
-    y = Proportion_of_richness
-  )
+  aes(Abundance_scaled, Proportion_of_richness)
 ) +
-  
-  geom_point(
-    alpha = 0.50,
-    size = 1.8,
-    color = "#8EC9D8"
-  ) +
-  
-  geom_smooth(
-    method = "lm",
-    se = TRUE,
-    linewidth = 1,
-    color = "#5C9FB2"
-  ) +
-  
+  geom_point(alpha = 0.50, size = 1.8, colour = "#B07AA1") +
+  geom_smooth(method = "lm", se = TRUE, linewidth = 1, colour = "#76506F") +
   annotate(
     "text",
     x = Inf,
@@ -133,71 +63,32 @@ fig1_relation <- ggplot(
     vjust = 1.5,
     size = 3.8
   ) +
-  
   labs(
+    tag = "(a)",
     x = "Standardized log flower abundance",
     y = "Percentage of pollinator richness captured (%)"
   ) +
-  
   theme_sensitivity
 
-
-# ==============================================================================
-# 6. FIGURE 2
-#    Abundance vs deviation from expected richness capture
-# ==============================================================================
-
+# Classify performance for panel (b)
 data_combined_all <- data_combined_all %>%
   mutate(
-    
     performance_class = case_when(
-      
-      Abundance_scaled <
-        quantile(
-          Abundance_scaled,
-          0.05,
-          na.rm = TRUE
-        ) &
-        
-        Residual_capture >
-        quantile(
-          Residual_capture,
-          0.90,
-          na.rm = TRUE
-        )
-      
-      ~ "Rare and attractive",
-      
-      Residual_capture > 0
-      ~ "Above expected",
-      
-      TRUE
-      ~ "Below expected"
+      Abundance_scaled < quantile(Abundance_scaled, 0.05, na.rm = TRUE) &
+        Residual_capture > quantile(Residual_capture, 0.90, na.rm = TRUE) ~
+        "Rare and attractive",
+      Residual_capture > 0 ~ "Above expected",
+      TRUE ~ "Below expected"
     )
   )
 
-
+# (b) Abundance versus deviation from expected richness capture
 fig2_relation <- ggplot(
   data_combined_all,
-  aes(
-    x = Abundance_scaled,
-    y = Residual_capture
-  )
+  aes(Abundance_scaled, Residual_capture)
 ) +
-  
-  geom_point(
-    aes(
-      color = performance_class
-    ),
-    alpha = 0.70,
-    size = 1.8
-  ) +
-  
-  geom_hline(
-    yintercept = 0,
-    linetype = "dashed"
-  ) +
-  
+  geom_point(aes(colour = performance_class), alpha = 0.70, size = 1.8) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
   scale_color_manual(
     values = c(
       "Rare and attractive" = "#D97A6B",
@@ -205,104 +96,41 @@ fig2_relation <- ggplot(
       "Below expected" = "#B8C4B2"
     )
   ) +
-  
   labs(
+    tag = "(b)",
     x = "Standardized log flower abundance",
     y = "Deviation from expected richness capture (%)",
-    color = NULL
+    colour = NULL
   ) +
-  
   theme_sensitivity
 
-
-# ==============================================================================
-# 7. FIGURE 3
-#    Sensitivity across rarity × attractiveness thresholds
-#
-#    Tile colour = effect size
-#    Text         = P value
-#    Black border = P < 0.05
-# ==============================================================================
-
+# Prepare threshold-sensitivity results for panel (c)
 sensitivity_plot_data <- sensitivity_results %>%
   mutate(
-    
     rare_q_label = factor(
-      paste0(
-        "Rare < ",
-        rare_q * 100,
-        "%"
-      ),
-      levels = c(
-        "Rare < 5%",
-        "Rare < 10%",
-        "Rare < 15%"
-      )
+      paste0("Rare < ", rare_q * 100, "%"),
+      levels = c("Rare < 5%", "Rare < 10%", "Rare < 15%")
     ),
-    
     attr_q_label = factor(
-      paste0(
-        "Attractive > ",
-        attr_q * 100,
-        "%"
-      ),
-      levels = c(
-        "Attractive > 90%",
-        "Attractive > 85%",
-        "Attractive > 80%"
-      )
+      paste0("Attractive > ", attr_q * 100, "%"),
+      levels = c("Attractive > 90%", "Attractive > 85%", "Attractive > 80%")
     ),
-    
     significant = p_value < 0.05,
-    
-    p_label = format.pval(
-      p_value,
-      digits = 2,
-      eps = 0.001
-    )
+    p_label = format.pval(p_value, digits = 2, eps = 0.001)
   )
 
-
-sens_test <- ggplot(
-  sensitivity_plot_data,
-  aes(
-    x = attr_q_label,
-    y = rare_q_label
-  )
-) +
-  
-  # Effect size
+# (c) Sensitivity across rarity and attractiveness thresholds
+sens_test <- ggplot(sensitivity_plot_data, aes(attr_q_label, rare_q_label)) +
+  geom_tile(aes(fill = effect_size), colour = "white", linewidth = 0.5) +
+  geom_text(aes(label = p_label), size = 3.5, colour = "black") +
   geom_tile(
-    aes(
-      fill = effect_size
-    ),
-    color = "white",
-    linewidth = 0.5
-  ) +
-  
-  # P value
-  geom_text(
-    aes(
-      label = p_label
-    ),
-    size = 3.5,
-    color = "black"
-  ) +
-  
-  # Significant results
-  geom_tile(
-    data = sensitivity_plot_data %>%
-      filter(significant),
-    aes(
-      x = attr_q_label,
-      y = rare_q_label
-    ),
+    data = filter(sensitivity_plot_data, significant),
+    aes(attr_q_label, rare_q_label),
     fill = NA,
-    color = "black",
-    linewidth = 1.0,
+    colour = "black",
+    linewidth = 1,
     inherit.aes = FALSE
   ) +
-  
   scale_fill_gradient2(
     low = "#90D4A4",
     mid = "#FFFFFF",
@@ -310,52 +138,27 @@ sens_test <- ggplot(
     midpoint = 0,
     name = "Effect size\n(median difference)"
   ) +
-  
   labs(
+    tag = "(c)",
     x = "Attractiveness threshold",
     y = "Rarity threshold"
   ) +
-  
   theme_sensitivity
 
-
-# ==============================================================================
-# 8. Combined sensitivity figure
-# ==============================================================================
-
+# Combine, display, and export
 final_sensitivity_fig <- plot_grid(
-  
   fig1_relation,
   fig2_relation,
   sens_test,
-  
   ncol = 3,
-  
-  labels = c(
-    "a",
-    "b",
-    "c"
-  ),
-  
-  label_size = 14,
-  label_fontface = "bold",
-  
-  align = "h"
+  align = "h",
+  axis = "tblr"
 )
 
-
-print(final_sensitivity_fig)
-
-
-# ==============================================================================
-# 9. Export figures
-# ==============================================================================
+final_sensitivity_fig
 
 ggsave(
-  file.path(
-    result_dir,
-    "Fig_H2_sensitivity_three_panel.png"
-  ),
+  file.path(result_dir, "Fig_H2_sensitivity_three_panel.png"),
   final_sensitivity_fig,
   width = 13,
   height = 4.8,
@@ -364,18 +167,8 @@ ggsave(
   bg = "white"
 )
 
-
-# ==============================================================================
-# 10. Export sensitivity table
-# ==============================================================================
-
 write.csv(
   sensitivity_results,
-  file.path(
-    result_dir,
-    "H2_sensitivity_results.csv"
-  ),
+  file.path(result_dir, "H2_sensitivity_results.csv"),
   row.names = FALSE
 )
-
-

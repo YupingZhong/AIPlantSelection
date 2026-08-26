@@ -129,7 +129,7 @@ plot_summary <- plot_data %>%
 # ==========================================================
 
 paired_data <- plot_data %>%
-  select(
+  dplyr::select(
     Study_Network_id,
     pollinator_order,
     Plant_Number,
@@ -475,6 +475,15 @@ labs(
 theme_classic(base_size = 11) +
   
   theme(
+    panel.border = element_rect(
+      colour = "grey55",
+      fill = NA,
+      linewidth = 0.6
+    ),
+    
+    # Avoid overlapping theme_classic axis lines
+    axis.line = element_blank(),
+    
     axis.title = element_text(
       face = "bold",
       size = 12
