@@ -1,5 +1,5 @@
 # ==========================================================
-# Table S5: Flower shape categories based on Kugler's methodology
+# Table S4: Flower shape categories based on Kugler's methodology
 # ==========================================================
 
 library(dplyr)

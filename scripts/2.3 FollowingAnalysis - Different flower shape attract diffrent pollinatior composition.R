@@ -730,7 +730,7 @@ network_props <- network_props %>%
   ) %>%
   ungroup()
 
-# tep 4: average across network
+# step 4: average across network
 plot_df <- network_props %>%
   group_by(
     flw_shape_revised,
@@ -741,7 +741,7 @@ plot_df <- network_props %>%
     .groups="drop"
   )
 
-# ⭐ Step 5: 花按 Bees 比例排序：
+
 shape_order <- plot_df %>%
   filter(functional_group=="Bees") %>%
   arrange(mean_prop) %>%
@@ -752,18 +752,19 @@ shape_order <- plot_df %>%
 
 plot_df$flw_shape_revised <- factor(plot_df$flw_shape_revised, levels = shape_order)
 
-# ⭐ Step 6: 功能群颜色
+
 
 group_cols <- c(
-  "Bees"                 = "#F5E066",   # 更柔和的黄
-  "Syrphidae"            = "#85CCAE",   # 更柔和的青绿
-  "Non-bee Hymenoptera"  = "#F5A88A",   # 更柔和的橙
-  "Coleoptera"           = "#E8A3D1",   # 更柔和的粉
-  "Lepidoptera"          = "#A5B5D9",   # 更柔和的蓝
-  "Non-syrphid Diptera"  = "#B8DD7F",   # 更柔和的黄绿
-  "Other"                = "#AAAAAA"    # 更柔和的灰
+  "Bees"                 = "#F5E066",   
+  "Syrphidae"            = "#85CCAE",   
+  "Non-bee Hymenoptera"  = "#F5A88A",   
+  "Coleoptera"           = "#E8A3D1",   
+  "Lepidoptera"          = "#A5B5D9",   
+  "Non-syrphid Diptera"  = "#B8DD7F",   
+  "Other"                = "#AAAAAA"    
 )
-# ⭐ 关键：定义堆叠顺序（从下到上）
+
+# 定义堆叠顺序（从下到上）
 group_order <- c(
   "Bees", 
   "Non-bee Hymenoptera", 
@@ -780,7 +781,8 @@ plot_df$functional_group <- factor(plot_df$functional_group, levels = group_orde
 # 设置因子顺序
 #plot_df$flw_shape_revised <- factor(plot_df$flw_shape_revised,
 #                                          levels = shape_order_final)
-# ⭐ Step 7: 作图
+
+# plot
 visit_group <- ggplot(plot_df,
                       aes(x = flw_shape_revised, y = mean_prop, fill = functional_group)) +
   geom_col(width = 0.8) +
@@ -852,8 +854,9 @@ ggsave(
   width = 8, height = 1.1,
   units = "in", dpi = 600, bg = "white"
 )
+
+
 ###################################################################
-############################################
 # Panel A
 ############################################
 # ==========================================================

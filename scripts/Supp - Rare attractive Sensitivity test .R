@@ -23,6 +23,12 @@ data_combined_all <- readRDS(file.path(data_dir, "H2_data_combined_all.rds"))
 model_summary <- readRDS(file.path(data_dir, "H2_model_summary.rds"))
 sensitivity_results <- readRDS(file.path(data_dir, "H2_sensitivity_results.rds"))
 
+#Holm矫正
+sensitivity_results <- sensitivity_results %>%
+  mutate(
+    p_adjusted = p.adjust(p_value, method = "holm")
+  )
+
 # Shared panel style
 theme_sensitivity <- theme_classic(base_size = 12) +
   theme(
@@ -53,20 +59,19 @@ fig1_relation <- ggplot(
   aes(Abundance_scaled, Proportion_of_richness)
 ) +
   geom_point(alpha = 0.50, size = 1.8, colour = "#B07AA1") +
-  geom_smooth(method = "lm", se = TRUE, linewidth = 1, colour = "#76506F") +
-  annotate(
-    "text",
-    x = Inf,
-    y = Inf,
-    label = r2_label,
-    hjust = 1.1,
-    vjust = 1.5,
-    size = 3.8
+  geom_smooth(
+    method = "lm",
+    formula = y ~ x,
+    se = TRUE,
+    level = 0.95,
+    linewidth = 1,
+    colour = "#76506F"
   ) +
+  
   labs(
     tag = "(a)",
     x = "Standardized log flower abundance",
-    y = "Percentage of pollinator richness captured (%)"
+    y = "Pollinator richness captured (%)"
   ) +
   theme_sensitivity
 
@@ -99,24 +104,57 @@ fig2_relation <- ggplot(
   labs(
     tag = "(b)",
     x = "Standardized log flower abundance",
-    y = "Deviation from expected richness capture (%)",
+    y = "Deviation from expected richness (%)",
     colour = NULL
   ) +
   theme_sensitivity
+
+
+fig2_relation <- fig2_relation +
+  guides(
+    colour = guide_legend(ncol = 1)
+  ) +
+  theme(
+    legend.position = "bottom",
+    legend.text = element_text(size = 9),
+    legend.key.height = grid::unit(0.35, "cm")
+  )
 
 # Prepare threshold-sensitivity results for panel (c)
 sensitivity_plot_data <- sensitivity_results %>%
   mutate(
     rare_q_label = factor(
       paste0("Rare < ", rare_q * 100, "%"),
-      levels = c("Rare < 5%", "Rare < 10%", "Rare < 15%")
+      levels = c(
+        "Rare < 5%",
+        "Rare < 10%",
+        "Rare < 15%"
+      )
     ),
+    
     attr_q_label = factor(
       paste0("Attractive > ", attr_q * 100, "%"),
-      levels = c("Attractive > 90%", "Attractive > 85%", "Attractive > 80%")
+      levels = c(
+        "Attractive > 90%",
+        "Attractive > 85%",
+        "Attractive > 80%"
+      )
     ),
-    significant = p_value < 0.05,
-    p_label = format.pval(p_value, digits = 2, eps = 0.001)
+    
+    significant = p_adjusted < 0.05,
+    
+    p_label = case_when(
+      is.na(p_adjusted) ~ "NA",
+      p_adjusted < 0.001 ~ "<0.001",
+      TRUE ~ paste0(
+        "P = ",
+        formatC(
+          p_adjusted,
+          format = "f",
+          digits = 3
+        )
+      )
+    )
   )
 
 # (c) Sensitivity across rarity and attractiveness thresholds
@@ -145,6 +183,30 @@ sens_test <- ggplot(sensitivity_plot_data, aes(attr_q_label, rare_q_label)) +
   ) +
   theme_sensitivity
 
+sens_test <- sens_test +
+  scale_x_discrete(
+    labels = c(
+      "Attractive > 90%" = ">90th",
+      "Attractive > 85%" = ">85th",
+      "Attractive > 80%" = ">80th"
+    )
+  ) +
+  scale_y_discrete(
+    labels = c(
+      "Rare < 5%" = "<5th",
+      "Rare < 10%" = "<10th",
+      "Rare < 15%" = "<15th"
+    )
+  ) +
+  labs(
+    x = "Attractiveness threshold\n(residual percentile)",
+    y = "Rarity threshold\n(abundance percentile)"
+  ) +
+  theme(
+    axis.text.x = element_text(size = 10, angle = 0),
+    axis.title = element_text(size = 10, face = "bold")
+  )
+
 # Combine, display, and export
 final_sensitivity_fig <- plot_grid(
   fig1_relation,
@@ -161,7 +223,7 @@ ggsave(
   file.path(result_dir, "Fig_H2_sensitivity_three_panel.png"),
   final_sensitivity_fig,
   width = 13,
-  height = 4.8,
+  height = 5,
   units = "in",
   dpi = 600,
   bg = "white"
@@ -172,3 +234,4 @@ write.csv(
   file.path(result_dir, "H2_sensitivity_results.csv"),
   row.names = FALSE
 )
+

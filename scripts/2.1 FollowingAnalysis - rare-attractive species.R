@@ -13,7 +13,7 @@
 #   3. Calculates marginal and conditional R2
 #   4. Calculates predicted richness capture and residual capture
 #   5. Identifies rare attractive plants
-#   6. Determines network-level Present / Absent groups
+#   6. Determines whether candidate rare-attractive plants were omitted
 #   7. Performs Wilcoxon test
 #   8. Performs sensitivity analysis
 #   9. Saves all analysis results for later plotting
@@ -35,7 +35,7 @@ library(purrr)
 # ==============================================================================
 
 data_dir <- "data/processed"
-result_dir <- "/Chap1_TargetPlant_to_monitor/result_260723"
+result_dir <- "D:/Chap1_TargetPlant_to_monitor/result_260723"
 
 if (!dir.exists(result_dir)) dir.create(result_dir, recursive = TRUE)
 
@@ -147,7 +147,7 @@ data_combined_all <- data_merge %>%
 # 7. Mixed model
 # ==============================================================================
 
-model_h2 <- lmer(
+rare_attractive_model <- lmer(
   Proportion_of_richness ~ Abundance_scaled +
     (1 | Study_id / Study_Network_id),
   data = data_combined_all
@@ -158,7 +158,7 @@ model_h2 <- lmer(
 # 8. Model statistics
 # ==============================================================================
 
-coef_tab <- as.data.frame(summary(model_h2)$coefficients)
+coef_tab <- as.data.frame(summary(rare_attractive_model)$coefficients)
 coef_tab$term <- rownames(coef_tab)
 
 beta_abundance <- coef_tab$Estimate[
@@ -179,19 +179,38 @@ p_abundance <- coef_tab$`Pr(>|t|)`[
 
 
 # ==============================================================================
-# 9. R2
+# 9. Marginal and conditional R2
 # ==============================================================================
 
-fixed_pred <- predict(model_h2, re.form = NA)
+fixed_pred <- predict(
+  rare_attractive_model,
+  re.form = NA
+)
 
-var_fixed <- var(fixed_pred, na.rm = TRUE)
-var_rand <- sum(as.data.frame(VarCorr(model_h2))$vcov)
-var_resid <- attr(VarCorr(model_h2), "sc")^2
+var_fixed <- var(
+  fixed_pred,
+  na.rm = TRUE
+)
 
-r2_marginal <- var_fixed / (var_fixed + var_rand + var_resid)
+variance_components <- as.data.frame(
+  VarCorr(rare_attractive_model)
+)
 
-r2_conditional <- (var_fixed + var_rand) /
-  (var_fixed + var_rand + var_resid)
+var_random <- variance_components %>%
+  filter(grp != "Residual") %>%
+  summarise(
+    total = sum(vcov)
+  ) %>%
+  pull(total)
+
+var_residual <- sigma(rare_attractive_model)^2
+
+var_total <- var_fixed + var_random + var_residual
+
+r2_marginal <- var_fixed / var_total
+
+r2_conditional <-
+  (var_fixed + var_random) / var_total
 
 
 model_results <- tibble(
@@ -213,7 +232,7 @@ print(model_results)
 data_combined_all <- data_combined_all %>%
   mutate(
     Predicted_capture = predict(
-      model_h2,
+      rare_attractive_model,
       newdata = .,
       re.form = NA,
       allow.new.levels = TRUE
@@ -265,7 +284,11 @@ rare_species_accepted <- rare_plant_list %>%
 
 
 # ==============================================================================
-# 12. Network-level Present / Absent classification
+# 12. Network-level classification of candidate-plant omission
+# Internal group codes are retained for compatibility with downstream scripts:
+#   Present = at least one candidate rare-attractive plant was omitted
+#   Absent  = no candidate plant was omitted, either because none occurred
+#             or because all candidates were included among the top 10 plants
 # ==============================================================================
 
 network_highattr <- data_interact %>%
@@ -333,7 +356,9 @@ attract_percent_10$present_group <- factor(
 
 wilcox_res <- wilcox.test(
   percentage_Abun10 ~ present_group,
-  data = attract_percent_10
+  data = attract_percent_10,
+  alternative = "two.sided",
+  exact = FALSE
 )
 
 print(wilcox_res)
@@ -413,24 +438,40 @@ run_present_absent_test <- function(data, rare_q, attr_q) {
   
   wt <- wilcox.test(
     percentage_Abun10 ~ group,
-    data = df_test
+    data = df_test,
+    alternative = "two.sided",
+    exact = FALSE
   )
   
-  median_present <- median(
-    df_test$percentage_Abun10[df_test$group == "Present"],
+  median_omitted <- median(
+    df_test$percentage_Abun10[
+      df_test$group == "Present"
+    ],
     na.rm = TRUE
   )
   
-  median_absent <- median(
-    df_test$percentage_Abun10[df_test$group == "Absent"],
+  median_not_omitted <- median(
+    df_test$percentage_Abun10[
+      df_test$group == "Absent"
+    ],
     na.rm = TRUE
+  )
+
+  n_omitted <- sum(
+    df_test$group == "Present"
+  )
+
+  n_not_omitted <- sum(
+    df_test$group == "Absent"
   )
   
   tibble(
     rare_q = rare_q,
     attr_q = attr_q,
     p_value = wt$p.value,
-    effect_size = median_present - median_absent,
+    effect_size = median_omitted - median_not_omitted,
+    n_omitted = n_omitted,
+    n_not_omitted = n_not_omitted,
     n_species = length(rare_species)
   )
 }
@@ -466,7 +507,7 @@ saveRDS(
 )
 
 saveRDS(
-  model_h2,
+  rare_attractive_model,
   file.path(data_dir, "H2_model.rds")
 )
 

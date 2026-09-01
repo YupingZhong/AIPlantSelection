@@ -1140,7 +1140,7 @@ fit_breakpoint <- function(
 # Spearman's rho reaches rho >= 0.8.
 # =============================================================================
 
-detect_plateau <- function(
+find_first_threshold <- function(
     df,
     response,
     threshold = 0.8
@@ -1190,13 +1190,13 @@ bp_model_nodf <- fit_breakpoint(
   "rho_nodf"
 )
 
-plateau_nodf <- detect_plateau(
+threshold_nodf <- find_first_threshold(
   r_curve,
   "rho_nodf",
   threshold_val
 )
 
-plateau_nodf_rand <- detect_plateau(
+threshold_nodf_rand <- find_first_threshold(
   r_curve_random,
   "rho_nodf_mean",
   threshold_val
@@ -1222,13 +1222,13 @@ bp_model_conn <- fit_breakpoint(
   "rho_conn"
 )
 
-plateau_conn <- detect_plateau(
+threshold_conn <- find_first_threshold(
   r_curve,
   "rho_conn",
   threshold_val
 )
 
-plateau_conn_rand <- detect_plateau(
+threshold_conn_rand <- find_first_threshold(
   r_curve_random,
   "rho_conn_mean",
   threshold_val
@@ -1254,13 +1254,13 @@ bp_model_H2 <- fit_breakpoint(
   "rho_H2"
 )
 
-plateau_H2 <- detect_plateau(
+threshold_H2 <- find_first_threshold(
   r_curve,
   "rho_H2",
   threshold_val
 )
 
-plateau_H2_rand <- detect_plateau(
+threshold_H2_rand <- find_first_threshold(
   r_curve_random,
   "rho_H2_mean",
   threshold_val
@@ -1435,14 +1435,14 @@ p_conn <- ggplot() +
   ) +
   
   geom_vline(
-    xintercept = plateau_conn,
+    xintercept = threshold_conn,
     color = "#F5A88A",
     linewidth = 1.2,
     alpha = 0.8
   ) +
   
   geom_vline(
-    xintercept = plateau_conn_rand,
+    xintercept = threshold_conn_rand,
     color = "grey50",
     linetype = "dashed",
     linewidth = 1.2,
@@ -1451,11 +1451,11 @@ p_conn <- ggplot() +
   
   annotate(
     "text",
-    x = plateau_conn - 15,
+    x = threshold_conn - 15,
     y = max(r_curve$rho_conn, na.rm = TRUE) - 0.07,
     label = paste0(
       "Abundant:\nn = ",
-      plateau_conn
+      threshold_conn
     ),
     color = "#B84E22",
     vjust = 1,
@@ -1465,14 +1465,14 @@ p_conn <- ggplot() +
   
   annotate(
     "text",
-    x = plateau_conn_rand + 5,
+    x = threshold_conn_rand + 5,
     y = max(
       r_curve_random$rho_conn_mean,
       na.rm = TRUE
     ) - 0.15,
     label = paste0(
       "Random:\nn = ",
-      plateau_conn_rand
+      threshold_conn_rand
     ),
     color = "grey50",
     vjust = 1,
@@ -1537,14 +1537,14 @@ geom_point(
 ) +
   
   geom_vline(
-    xintercept = plateau_nodf,
+    xintercept = threshold_nodf,
     color = "#355A9A",
     linewidth = 1.2,
     alpha = 0.8
   ) +
   
   geom_vline(
-    xintercept = plateau_nodf_rand,
+    xintercept = threshold_nodf_rand,
     color = "grey50",
     linetype = "dashed",
     linewidth = 1.2,
@@ -1553,11 +1553,11 @@ geom_point(
   
   annotate(
     "text",
-    x = plateau_nodf - 15,
+    x = threshold_nodf - 15,
     y = max(r_curve$rho_nodf, na.rm = TRUE) - 0.07,
     label = paste0(
       "Abundant:\nn = ",
-      plateau_nodf
+      threshold_nodf
     ),
     color = "#355A9A",
     vjust = 1,
@@ -1567,14 +1567,14 @@ geom_point(
   
   annotate(
     "text",
-    x = plateau_nodf_rand - 12,
+    x = threshold_nodf_rand - 12,
     y = max(
       r_curve_random$rho_nodf_mean,
       na.rm = TRUE
     ) - 0.15,
     label = paste0(
       "Random:\nn = ",
-      plateau_nodf_rand
+      threshold_nodf_rand
     ),
     color = "grey50",
     vjust = 1,
@@ -1639,14 +1639,14 @@ p_H2 <- ggplot() +
   ) +
   
   geom_vline(
-    xintercept = plateau_H2,
+    xintercept = threshold_H2,
     color = "#6A4C93",
     linewidth = 1.2,
     alpha = 0.8
   ) +
   
   geom_vline(
-    xintercept = plateau_H2_rand,
+    xintercept = threshold_H2_rand,
     color = "grey50",
     linetype = "dashed",
     linewidth = 1.2,
@@ -1655,11 +1655,11 @@ p_H2 <- ggplot() +
   
   annotate(
     "text",
-    x = plateau_H2 - 15,
+    x = threshold_H2 - 15,
     y = max(r_curve$rho_H2, na.rm = TRUE) - 0.07,
     label = paste0(
       "Abundant:\nn = ",
-      plateau_H2
+      threshold_H2
     ),
     color = "#6A4C93",
     vjust = 1,
@@ -1669,14 +1669,14 @@ p_H2 <- ggplot() +
   
   annotate(
     "text",
-    x = plateau_H2_rand - 12,
+    x = threshold_H2_rand - 12,
     y = max(
       r_curve_random$rho_H2_mean,
       na.rm = TRUE
     ) - 0.15,
     label = paste0(
       "Random:\nn = ",
-      plateau_H2_rand
+      threshold_H2_rand
     ),
     color = "grey50",
     vjust = 1,

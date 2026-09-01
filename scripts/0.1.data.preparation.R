@@ -259,21 +259,26 @@ plant_visit <- data_interact %>%
   group_by(Study_Network_id) %>%
   summarise(plant_visit_time = sum(Interaction, na.rm = TRUE)) %>%
   ungroup() %>%
-  mutate(flag = plant_visit_time <= 30)
+  mutate(flag = plant_visit_time < 30)
   
 main_data <- plant_visit %>% filter(plant_visit_time <= 500)
 tail_data <- plant_visit %>% filter(plant_visit_time > 500)
 
 # 主图
 p_main <- ggplot(main_data, aes(x = plant_visit_time, fill = flag)) +
-  geom_histogram(binwidth = 10, color = "black") +
+  geom_histogram(
+    binwidth = 10,
+    boundary = 30,
+    closed = "left",
+    color = "black"
+  ) +
   scale_fill_manual(values = c(
     "TRUE" = "#E9C46A",
     "FALSE" = "#66C2A5")) +
   labs(
     x = "Total interactions per network (≤500)",
     y = "Number of networks",
-    fill = "Low interaction (≤30)"
+    fill = "Low interaction (<30)"
   ) +
   theme_classic() +   #先放主题
   theme(
@@ -319,7 +324,7 @@ plant_diversity<-data_count_scaled_species%>%
   filter(!is.na(Plant_species)) %>%
   group_by(Study_Network_id) %>%
   summarise(plant_sp_number = n_distinct(Plant_species,na.rm = TRUE)) %>%
-  mutate(flag = plant_sp_number <= 10)
+  mutate(flag = plant_sp_number < 10)
 nrow(plant_diversity)# 542 461
 
 #saveRDS(plant_diversity,"plant_diversity_461networks.rds")
@@ -332,7 +337,10 @@ histogram_2 <- ggplot(
   aes(x = plant_sp_number, fill = flag)) +
   geom_histogram(
     binwidth = 2,
-    color = "black") +
+    boundary = 10,
+    closed = "left",
+    color = "black"
+  ) +
   scale_fill_manual(
     values = c(
       "TRUE" = "#E9C46A",
@@ -342,7 +350,7 @@ histogram_2 <- ggplot(
   labs(
     x = "Number of plant species",
     y = "Number of networks",
-    fill = "Low richness (≤10)") +
+    fill = "Low richness (<10)") +
   theme_classic() +   #和 p_main 一致
   theme(
     panel.border = element_rect(colour = "grey55", fill = NA, linewidth = 0.6),
@@ -442,5 +450,5 @@ print(doc, target = "./result_260526/plant_sampling_unit.docx")
 # Save processed datasets
 # ==========================================================
 
- saveRDS(data_count_scaled,"data_count_scaled_published.rds")
- saveRDS(data_interact,"data_interact_published.rds")
+ saveRDS(data_count_scaled,"data/processed/data_count_scaled_published.rds")
+ saveRDS(data_interact,"data/processed/data_interact_published.rds")

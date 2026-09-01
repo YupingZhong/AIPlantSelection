@@ -32,8 +32,7 @@ shape_class_freq <- data_count_scaled %>%
   filter(
     Flower_count_scaled != 0,
     !is.na(Plant_species),
-    !is.na(flw_shape_revised),
-    !flw_shape_revised %in% c("brush flowers", "trap flowers")
+    !is.na(flw_shape_revised)
   ) %>%
   distinct(Study_Network_id, flw_shape_revised) %>%
   count(flw_shape_revised, name = "network_number") %>%

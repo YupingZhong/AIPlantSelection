@@ -126,13 +126,13 @@ plot_data <- result_all %>%
     
     Plant_Number = factor(
       case_when(
-      grepl("10$", Option) ~ "Top10",
-      grepl("5$", Option) ~ "Top5",
-      grepl("3$", Option) ~ "Top3"
-    ),
-    levels = c("Top10", "Top5", "Top3")
-  )
-)%>%
+        grepl("10$", Option) ~ "Top10",
+        grepl("5$", Option) ~ "Top5",
+        grepl("3$", Option) ~ "Top3"
+      ),
+      levels = c("Top10", "Top5", "Top3")
+    )
+  )%>%
   
   # --------------------------------------------------------
 # Remove abundance + shape from Top10
@@ -286,6 +286,7 @@ run_paired_test <- function(
     x[valid],
     y[valid],
     paired = TRUE,
+    alternative = "two.sided",
     exact = FALSE
   )
   
@@ -658,7 +659,7 @@ geom_point(
   size = 4
 ) +
   
-
+  
   # ========================================================
 # Sampling-effort panels
 # ========================================================
@@ -686,7 +687,7 @@ geom_text(
   size = 5
 )  +
   
-
+  
   
   # ========================================================
 # Fill scale
@@ -755,7 +756,7 @@ scale_y_continuous(
     )
   )
 ) +
-
+  
   coord_cartesian(
     clip = "off"
   ) +
@@ -992,6 +993,7 @@ run_table_test <- function(
     x,
     y,
     paired = TRUE,
+    alternative = "two.sided",
     exact = FALSE
   )
   
@@ -1109,41 +1111,57 @@ table_s1 <- bind_rows(
     "Top3_Abundance",
     "Top3_Shape",
     "Top 3 abundant vs Top 3 flower-shape"
+  ),
+  
+  
+  # --------------------------------------------------------
+  # Abundance vs phylogenetic
+  # --------------------------------------------------------
+  run_table_test(
+    table_data,
+    "Top10_Abundance",
+    "Top10_Phylo",
+    "Top 10 abundant vs Top 10 phylogenetic"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Top5_Abundance",
+    "Top5_Phylo",
+    "Top 5 abundant vs Top 5 phylogenetic"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Top3_Abundance",
+    "Top3_Phylo",
+    "Top 3 abundant vs Top 3 phylogenetic"
   )
 )
 
 
+
+
 # ==========================================================
-# 4. Format P-values
+# 4. Adjust and format P values
 # ==========================================================
 
 table_s1 <- table_s1 %>%
   mutate(
-    
-    `Median1` = round(
-      Median1,
-      2
+    P_adjusted = p.adjust(
+      P_value,
+      method = "holm"
     ),
-    
-    `Median2` = round(
-      Median2,
-      2
-    ),
-    
-    `P-value` = case_when(
-      
-      is.na(P_value) ~
-        "NA",
-      
-      P_value < 0.001 ~
-        "<0.001",
-      
-      TRUE ~
-        format.pval(
-          P_value,
-          digits = 3,
-          eps = 0.001
-        )
+    Median1 = round(Median1, 2),
+    Median2 = round(Median2, 2),
+    `Adjusted P value` = case_when(
+      is.na(P_adjusted) ~ "NA",
+      P_adjusted < 0.001 ~ "<0.001",
+      TRUE ~ format.pval(
+        P_adjusted,
+        digits = 3,
+        eps = 0.001
+      )
     )
   ) %>%
   select(
@@ -1151,7 +1169,7 @@ table_s1 <- table_s1 %>%
     n,
     Median1,
     Median2,
-    `P-value`
+    `Adjusted P value`
   )
 
 
@@ -1183,10 +1201,10 @@ ft_table_s1 <- flextable(
   
   set_header_labels(
     Comparison = "Comparison",
-    n = "n",
-    Median1 = "Median1",
-    Median2 = "Median2",
-    `P-value` = "P-value"
+    n = "Paired networks (n)",
+    Median1 = "Median 1 (%)",
+    Median2 = "Median 2 (%)",
+    `Adjusted P value` = "Adjusted P value"
   ) %>%
   
   theme_booktabs() %>%
@@ -1211,7 +1229,7 @@ ft_table_s1 <- flextable(
       "n",
       "Median1",
       "Median2",
-      "P-value"
+      "Adjusted P value"
     ),
     align = "center",
     part = "all"
@@ -1224,7 +1242,7 @@ ft_table_s1 <- flextable(
   
   width(
     j = "n",
-    width = 0.8
+    width = 0.9
   ) %>%
   
   width(
@@ -1238,11 +1256,9 @@ ft_table_s1 <- flextable(
   ) %>%
   
   width(
-    j = "P-value",
-    width = 1.2
+    j = "Adjusted P value",
+    width = 1.3
   )
-
-
 # ==========================================================
 # 8. Create Word document
 # ==========================================================
@@ -1250,16 +1266,20 @@ ft_table_s1 <- flextable(
 doc_table_s1 <- read_docx() %>%
   
   body_add_par(
-    "Table S1",
+    "Supplementary Table S1",
     style = "heading 2"
   ) %>%
   
   body_add_par(
     paste0(
-      "Pairwise statistical comparisons among subsampling ",
-      "strategies using paired Wilcoxon signed-rank tests. ",
-      "Sample sizes and medians of each subsampling strategy ",
-      "being compared are given, as well as p-values."
+      "Pairwise comparisons of the percentage of pollinator richness ",
+      "captured under different plant-subsampling strategies and sampling ",
+      "efforts. Comparisons were conducted using two-sided paired Wilcoxon ",
+      "signed-rank tests across networks with results available under both ",
+      "conditions. Median 1 and Median 2 refer to the median percentage of ",
+      "pollinator richness captured under the first and second conditions ",
+      "listed, respectively. P values were adjusted across all comparisons ",
+      "using the Holm method."
     )
   ) %>%
   

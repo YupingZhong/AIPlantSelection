@@ -1,13 +1,11 @@
 ################################################################################
-# RESULT 2
-# Figures and tables for H2
+# Factors associated with abundance-based subsampling effectiveness
 #
-# This script ONLY:
-#   1. Loads H2 analysis results
-#   2. Creates the main three-panel figure
-#   3. Creates the main H2 result tables
-#
-# All statistical analyses are performed in Script 1.
+# This script:
+#   1. Loads the processed analysis results
+#   2. Calculates richness and NODF associations
+#   3. Creates the main three-panel figure
+#   4. Creates the associated result tables
 ################################################################################
 
 
@@ -31,8 +29,8 @@ library(officer)
 # 2. Paths
 # ==============================================================================
 
-data_dir <- "data/processed"
-result_dir <- "/Chap1_TargetPlant_to_monitor/result_260723"
+data_dir <- file.path("data", "processed")
+result_dir <- "results"
 
 dir.create(
   result_dir,
@@ -209,6 +207,11 @@ richness_compare <- bind_rows(
 # 11. Richness statistics
 # ==============================================================================
 
+# Correlations and linear models are fitted using richness on its original
+# scale. Panel (a) subsequently applies a log10 coordinate transformation for
+# display. Consequently, the fitted lines may appear curved on the plotted
+# log10 x-axis even though the fitted models are linear on the original scale.
+
 stats_richness <- richness_compare %>%
   group_by(Predictor) %>%
   summarise(
@@ -231,7 +234,10 @@ stats_richness <- richness_compare %>%
 # ==============================================================================
 
 nestedness_df <- data_interact %>%
-  filter(!is.na(Interaction_addup)) %>%
+  filter(
+    !is.na(Interaction_addup),
+    Interaction_addup > 0
+  ) %>%
   group_by(Study_Network_id) %>%
   summarise(
     
@@ -250,7 +256,7 @@ nestedness_df <- data_interact %>%
       ) {
         bipartite::networklevel(
           mat_bin,
-          index = "nestedness"
+          index = "NODF"
         )
       } else {
         NA_real_
@@ -362,9 +368,10 @@ p_richness <- ggplot(
   
   geom_smooth(
     method = "lm",
+    formula = y ~ x,
     se = FALSE,
     linewidth = 0.9
-  ) +
+  )  +
   
   scale_color_manual(
     values = richness_colors,
@@ -392,10 +399,10 @@ p_richness <- ggplot(
       "Pollinator"
     )
   ) +
-  scale_x_log10(
-  breaks = scales::breaks_log(n = 5),
-  labels = scales::label_number()
-) +
+  scale_x_continuous(
+    breaks = scales::breaks_log(n = 5),
+    labels = scales::label_number()
+  )  +
   
   scale_y_continuous(
     limits = common_ylim,
@@ -403,7 +410,7 @@ p_richness <- ggplot(
   ) +
   
   labs(
-    x = expression(bold("Richness (" * log[10] * " scale)")),
+    x = expression("Species richness (" * log[10] * " scale)"),
     y = "Pollinator richness captured (%)",
     color = NULL,
     shape = NULL
@@ -429,6 +436,13 @@ p_richness <- ggplot(
     vjust = 0,
     size = 5.5
   )  +
+  
+  # Transform the displayed x-axis after fitting the linear models above.
+  # This retains Pearson correlations and lm fits on raw richness while
+  # presenting plant and pollinator richness on a log10 scale.
+  coord_trans(
+    x = "log10"
+  ) +
   
   theme_classic(base_size = 17) +
   theme(

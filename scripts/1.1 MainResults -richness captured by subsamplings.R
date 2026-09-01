@@ -412,6 +412,9 @@ head(op2_percent_shape_top5)
 
 ############################################################################
 #----2.3 Phylo distance-----------------------
+# Phylogenetic strategy:
+# Select plants based solely on phylogenetic distances.
+# Floral abundance is not used to rank plants.
 
 library(dplyr)
 library(stringr)
@@ -512,6 +515,7 @@ head(match_check)
 
 #------------------------------------
 # 5. Select phylogenetic diversity species
+
 #------------------------------------
 
 select_PD_species <- function(species_pool, phylo_tree, n_select){
