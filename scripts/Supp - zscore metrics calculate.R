@@ -8,7 +8,7 @@ library(cowplot)
 library(ggpubr)
 
 # ---------------------------
-# 0️⃣ 数据集合
+
 # ---------------------------
 datasets <- list(
   orig = data_merge,
@@ -20,7 +20,7 @@ datasets <- list(
 )
 
 # ---------------------------
-# 1️⃣ 构建 network matrix
+
 # ---------------------------
 make_web_list <- function(data) {
   data %>%
@@ -52,21 +52,21 @@ make_web_list <- function(data) {
 }
 
 # ---------------------------
-# 2️⃣ observed metrics
+#  observed metrics
 # ---------------------------
 calc_network_index <- function(webs, index_name) {
   lapply(webs, function(mat) bipartite::networklevel(mat, index = index_name))
 }
 
 # ---------------------------
-# 3️⃣ null models
+#  null models
 # ---------------------------
 generate_nulls <- function(webs, method = "r2dtable", N = 500) {
   lapply(webs, function(mat) bipartite::nullmodel(mat, method = method, N = N))
 }
 
 # ---------------------------
-# 4️⃣ null metric
+# null metric
 # ---------------------------
 calc_null_index <- function(nulls, index_name) {
   lapply(nulls, function(null_list) {
@@ -75,7 +75,7 @@ calc_null_index <- function(nulls, index_name) {
 }
 
 # ---------------------------
-# 5️⃣ z-score calculation
+#  z-score calculation
 # ---------------------------
 calc_zscore <- function(obs, nulls) {
   mapply(function(o, n) {
@@ -86,7 +86,7 @@ calc_zscore <- function(obs, nulls) {
 }
 
 # ---------------------------
-# 6️⃣ z-score wrapper for all datasets
+#  z-score wrapper for all datasets
 # ---------------------------
 calc_zscore_all <- function(datasets, index_name) {
   results <- lapply(datasets, function(data) {
@@ -94,7 +94,7 @@ calc_zscore_all <- function(datasets, index_name) {
     if (length(webs) == 0) return(NULL)
     
     obs <- calc_network_index(webs, index_name)
-    nulls <- generate_nulls(webs, N = 500)          # ✅ 设置 500 次
+    nulls <- generate_nulls(webs, N = 500)        
     null_index <- calc_null_index(nulls, index_name)
     z <- calc_zscore(obs, null_index)
     
@@ -107,7 +107,7 @@ calc_zscore_all <- function(datasets, index_name) {
 }
 
 # ---------------------------
-# 7️⃣ 计算 nestedness & connectance
+#e
 # ---------------------------
 all_z_nested <- calc_zscore_all(datasets, index_name = "nestedness")
 all_z_connectance <- calc_zscore_all(datasets, index_name = "connectance")
@@ -117,7 +117,7 @@ saveRDS(all_z_nested,"all_z_nested.rds")
 saveRDS(all_z_connectance,"all_z_connectance.rds")
 
 # ---------------------------
-# 8️⃣ 作图准备
+#
 # ---------------------------
 my_colors <- c(
   "Top 10" = "#66C2A5", "Top 5" = "#4E79A7", "Top 3" = "#F28E2B",
@@ -178,7 +178,7 @@ p3 <- plot_z(long_connect, "Z-scored connectance (subnetwork)")
 p4 <- plot_z(long_connect_flw, "Z-scored connectance (subnetwork)")
 
 # ---------------------------
-# 10️⃣ 拼图
+# 
 # ---------------------------
 p1.1 <- p1 + theme(legend.position = "none")
 p2.1 <- p2 + theme(legend.position = "none")

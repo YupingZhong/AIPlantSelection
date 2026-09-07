@@ -1,7 +1,7 @@
 ########################
 #Extract flower traits
 #To Check the plant names in the 'counts' and integrate the unique plant names extracted from 'counts' and 'interaction' into a single plant list.
-data_count_scaled<-readRDS("data_count_scaled_published.rds")#全部互作数据
+data_count_scaled<-readRDS("data_count_scaled_published.rds")
 data_interact<-readRDS("data_interact_published.rds")
 merge_plantlist<-data.frame(Plant_species =unique(data_merge$Plant_accepted_name))
 merge_plantlist#1246
@@ -9,8 +9,8 @@ merge_plantlist#1246
 
 
 ##delete rows with NA 
-null_values <- is.na(merge_plantlist)# 使用 is.na() 函数检查缺失值
-has_null <- any(as.vector(null_values))# 通过检查是否有任何缺失值来得知数据框是否包含缺失值
+null_values <- is.na(merge_plantlist)
+has_null <- any(as.vector(null_values))
 has_null
 
 ##flw_shape extract

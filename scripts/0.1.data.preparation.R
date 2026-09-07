@@ -52,16 +52,11 @@ plant_unit <- read.csv("data/raw/plant_sampling_unit.csv") %>%
 # Typo revision
 meta_count <- meta_count %>%
   mutate(
-    # 去掉末尾的 sp./Sp./SP./1/?/spec.
     Plant_species = str_remove(Plant_species, "\\s+(sp\\.|Sp\\.|SP\\.|1|3|\\?|spec\\.|/|spp\\.?|spps\\.?|sp\\s*\\d+)$"),
-    # 去掉中间的 " sp."
     Plant_species = str_replace(Plant_species, "\\s+sp\\.\\s+", " "),
-    # 删除末尾的 sp / Sp / spp
     Plant_species = str_remove(Plant_species, "\\s+(sp|Sp|spp)$"),
-    # 删除末尾的下划线
     Plant_species = str_remove(Plant_species, "_$")
   ) %>%
-  # 去掉特定无效值
   filter(!is.na(Plant_species), !Plant_species %in% c("NO FLOWERS", "[Nothing] [Nothing]")) %>%
   mutate(
     Plant_species = case_when(
@@ -79,26 +74,26 @@ meta_count <- meta_count %>%
       Plant_species == "Linum nervosum.perenne"  ~ "Linum nervosum",
       Plant_species == "Bituminaria bituminosa (L.) C.H.Stirt." ~ "Bituminaria bituminosa",
       Plant_species == "Vaccinium vitis_idaea" ~ "Vaccinium vitis-idaea",
-      TRUE ~ Plant_species))  %>% # 其他行保持原样
-  # 创建新列只保留属名 + 种加词
+      TRUE ~ Plant_species))  %>% 
+  
   mutate(
-    n_words = str_count(Plant_species, "\\S+"),  # 计算词数
+    n_words = str_count(Plant_species, "\\S+"),  
     Plant_species = if_else(
       n_words >= 2,
-      str_c(word(Plant_species, 1), word(Plant_species, 2), sep = " "),  # 前两个词
-      Plant_species)) %>% # 只有一个词则保留
+      str_c(word(Plant_species, 1), word(Plant_species, 2), sep = " "),  
+      Plant_species)) %>% 
   dplyr::select(-n_words)  %>%
   mutate(
     Plant_species = str_remove(Plant_species, "/$"),
-    Plant_species = str_squish(Plant_species)  # 去掉尾部多余空格
+    Plant_species = str_squish(Plant_species)  
   )
 #########################################
 #1.1 unify plant name and merge the interaction data and flower data
 
 meta_count <- meta_count %>%
   left_join(species_correct %>% dplyr::select(Plant_species, WOF_name), by = "Plant_species") %>%
-  mutate(Plant_species = coalesce(WOF_name, Plant_species)) %>%  # 如果有对应 WOF_name 就替换
-  dplyr::select(-WOF_name)  # 去掉临时列
+  mutate(Plant_species = coalesce(WOF_name, Plant_species)) %>%  
+  dplyr::select(-WOF_name)  
 
 ##########
 # Site sampled in multiple years should be seperated
@@ -120,10 +115,8 @@ metadata <- metadata %>%
   left_join(year_flag, by = "Study_Network_id_noyear") %>%
   mutate(
     Study_Network_id = case_when(
-      # ❗ 两边都有 year → 用 site-year
       has_year & !is.na(Year) ~
         paste(Study_id, Network_id, Year, sep = "_"),
-      # ❗ flower data 没 year → 强制降级
       TRUE ~
         Study_Network_id_noyear))
 
@@ -146,7 +139,7 @@ study_network_ids<-b$Study_Network_id
 
 #site_id selected
 #select all the sites with plant data
-data_interact <- metadata[metadata$Study_Network_id %in% study_network_ids, ] #data_interact是筛选出的，含有plant_data的networks
+data_interact <- metadata[metadata$Study_Network_id %in% study_network_ids, ] 
 
 data_count <- meta_count %>%
   filter(Flower_count!=0) %>%
@@ -181,7 +174,7 @@ data_count_scaled <- data_count_scaled %>%
 # Filter networks
 # ==========================================================
 #######
-# 检查剩余网络数
+# Check the number of remaining networks
 length(unique(data_count_scaled$Study_Network_id))# 1035
 
 data_interact_trait <- left_join(data_interact, traits, by = "Plant_accepted_name")
@@ -210,13 +203,13 @@ plant_flower <- data_count_scaled %>%
   dplyr::select(Study_Network_id,Plant_species) %>% 
   distinct()
 
-# 清理 plant_inter
+# Clean plant_inter
 plant_inter <- plant_inter %>%
   mutate(
-    Plant_original_name = str_trim(Plant_original_name), # 去掉前后空格
-    Plant_original_name = str_to_lower(Plant_original_name)) # 全小写
+    Plant_original_name = str_trim(Plant_original_name), # Remove leading and trailing whitespace
+    Plant_original_name = str_to_lower(Plant_original_name)) # Convert to lowercase
 
-# 清理 plant_flower
+# Clean plant_flower
 plant_flower <- data_count_scaled %>%
   dplyr::select(Study_Network_id, Plant_species, Flower_count) %>%
   distinct() %>%
@@ -225,12 +218,12 @@ plant_flower <- data_count_scaled %>%
     Plant_species = str_trim(Plant_species),
     Plant_species = str_to_lower(Plant_species))
 
-# 再 join
+# Join the cleaned datasets
 plant_merge <- plant_inter %>%
   left_join(plant_flower, 
             by = c("Study_Network_id", "Plant_original_name" = "Plant_species"))
 
-# 检查缺失情况
+# Check for missing values
 NA1_proportion <- plant_merge %>%
   group_by(Study_Network_id) %>%
   summarise(
@@ -238,14 +231,14 @@ NA1_proportion <- plant_merge %>%
     missing_plants = sum(is.na(Flower_count)),
     proportion_missing = missing_plants / total_plants)
 
-# 筛掉 >25% 缺失的网络
+# Remove networks with more than 25% missing plant records
 dropNetwork <- NA1_proportion %>%
   filter(proportion_missing > 0.25) %>%
   pull(Study_Network_id)
 
 dropNetwork #452
 
-# 更新数据
+# Update the datasets
 data_interact <- data_interact %>%
   filter(!Study_Network_id %in% dropNetwork)
 
@@ -260,11 +253,11 @@ plant_visit <- data_interact %>%
   summarise(plant_visit_time = sum(Interaction, na.rm = TRUE)) %>%
   ungroup() %>%
   mutate(flag = plant_visit_time < 30)
-  
+
 main_data <- plant_visit %>% filter(plant_visit_time <= 500)
 tail_data <- plant_visit %>% filter(plant_visit_time > 500)
 
-# 主图
+# Main plot
 p_main <- ggplot(main_data, aes(x = plant_visit_time, fill = flag)) +
   geom_histogram(
     binwidth = 10,
@@ -280,7 +273,7 @@ p_main <- ggplot(main_data, aes(x = plant_visit_time, fill = flag)) +
     y = "Number of networks",
     fill = "Low interaction (<30)"
   ) +
-  theme_classic() +   #先放主题
+  theme_classic() +   #Apply the base theme first
   theme(
     panel.border = element_rect(colour = "grey55", fill = NA, linewidth = 0.6),
     axis.line = element_blank(),
@@ -288,13 +281,13 @@ p_main <- ggplot(main_data, aes(x = plant_visit_time, fill = flag)) +
   guides(
     fill = guide_legend(override.aes = list(size = 5)))
 
-# inset 小图
+# Inset plot
 p_tail <- ggplot(tail_data, aes(x = plant_visit_time)) +
   geom_histogram(binwidth = 100, fill = "grey50", color = "black") +
   theme_minimal(base_size = 8) +
   labs(x = ">500", y = NULL)
 
-# 拼 inset（放右上角）
+# Add the inset in the upper-right corner
 histogram_1 <- ggdraw() +
   draw_plot(p_main) +
   draw_plot(p_tail, x = 0.55, y = 0.5, width = 0.4, height = 0.4)
@@ -317,8 +310,8 @@ data_count_scaled<-data_count_scaled%>%
 
 #figures
 data_count_scaled_species <- data_count_scaled %>%
-  filter(!is.na(Plant_species)) %>%       # 排除 NA
-  filter(str_detect(Plant_species, " "))  # 保留含空格的名字（双名）
+  filter(!is.na(Plant_species)) %>%       # Exclude NA values
+  filter(str_detect(Plant_species, " "))  # Keep names containing a space (binomial names)
 
 plant_diversity<-data_count_scaled_species%>%
   filter(!is.na(Plant_species)) %>%
@@ -351,19 +344,19 @@ histogram_2 <- ggplot(
     x = "Number of plant species",
     y = "Number of networks",
     fill = "Low richness (<10)") +
-  theme_classic() +   #和 p_main 一致
+  theme_classic() +   #Match the theme of p_main
   theme(
     panel.border = element_rect(colour = "grey55", fill = NA, linewidth = 0.6),
     axis.line = element_blank(),
-    legend.position = "bottom")   #一致
+    legend.position = "bottom")   #Keep styling consistent
 
 print(histogram_2)#750*350
 
 ggsave("/Chap1_TargetPlant_to_monitor/result_260723/hist2.png", histogram_2, width = 7.5, height = 3.5, units = "in", dpi = 600)
 
 few_sp <- data_interact %>%
-  filter(!is.na(Plant_accepted_name)) %>%       # 排除 NA
-  filter(str_detect(Plant_accepted_name, " ")) %>%  # 保留含空格的名字（双名）
+  filter(!is.na(Plant_accepted_name)) %>%       # Exclude NA values
+  filter(str_detect(Plant_accepted_name, " ")) %>%  # Keep names containing a space (binomial names)
   group_by(Study_Network_id) %>%
   summarize(
     plant_sp_number = n_distinct(Plant_accepted_name, na.rm = TRUE),
@@ -375,12 +368,12 @@ data_interact <-data_interact%>%
   filter(!Study_Network_id%in%few_sp$Study_Network_id)
 data_count_scaled <-data_count_scaled%>%
   filter(!Study_Network_id%in%few_sp$Study_Network_id)%>%
-  filter(!is.na(Plant_species)& Flower_count != 0) %>%       # 排除 NA
-  filter(str_detect(Plant_species, " "))  # 保留含空格的名字（双名）, 去掉所有只鉴定到属的记录
+  filter(!is.na(Plant_species)& Flower_count != 0) %>%       # Exclude NA values
+  filter(str_detect(Plant_species, " "))  # Keep names containing a space (binomial names) and remove all records identified only to genus
 
 # select_network<-unique(data_interact$Study_Network_id)
 length(unique(data_interact$Study_id))
-unique(data_interact$Study_Network_id)#332个网络 270，30个研究 27
+unique(data_interact$Study_Network_id)#332 networks 270, 30 studies 27
 
 length(unique(data_count_scaled$Plant_species))# 1396 1029
 
@@ -395,8 +388,8 @@ data_interact <-data_interact%>%
   filter(!Study_Network_id%in%few_sp_in_plant_survey$Study_Network_id)
 data_count_scaled <-data_count_scaled%>%
   filter(!Study_Network_id%in%few_sp_in_plant_survey$Study_Network_id)%>%
-  filter(!is.na(Plant_species)& Flower_count != 0) %>%       # 排除 NA
-  filter(str_detect(Plant_species, " "))  # 保留含空格的名字（双名）, 去掉所有只鉴定到属的记录
+  filter(!is.na(Plant_species)& Flower_count != 0) %>%       # Exclude NA values
+  filter(str_detect(Plant_species, " "))  # Keep names containing a space (binomial names) and remove all records identified only to genus
 
 #### summarize
 select_network <- unique(data_interact$Study_Network_id)
@@ -428,15 +421,15 @@ names(plant_unit) <- c("Study ID", "Flower sampling methods")
 
 
 ft <- flextable(plant_unit) %>%
-  theme_booktabs() %>%                     # 三线表
-  fontsize(size = 11, part = "all") %>%    # 字号
+  theme_booktabs() %>%                     # Three-line table style
+  fontsize(size = 11, part = "all") %>%    # Font size
   font(fontname = "Arial", part = "all") %>%
   
-  # 期刊风格列宽
+  # Journal-style column widths
   width(j = "Study ID", width = 1.5) %>%
   width(j = "Flower sampling methods", width = 7) %>%
   
-  # 对齐
+  # Alignment
   align(j = "Study ID", align = "center") %>%
   align(j = "Flower sampling methods", align = "left")
 
@@ -450,5 +443,5 @@ print(doc, target = "./result_260526/plant_sampling_unit.docx")
 # Save processed datasets
 # ==========================================================
 
- saveRDS(data_count_scaled,"data/processed/data_count_scaled_published.rds")
- saveRDS(data_interact,"data/processed/data_interact_published.rds")
+saveRDS(data_count_scaled,"data/processed/data_count_scaled_published.rds")
+saveRDS(data_interact,"data/processed/data_interact_published.rds")

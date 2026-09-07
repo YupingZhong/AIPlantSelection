@@ -1,0 +1,7 @@
+"strategy","metric","proportion","percentage","rho","rho_sd","n_networks","median_n_selected","min_n_selected","max_n_selected"
+"Abundance","Connectance",0.3,30,0.804960192474918,NA,268,9,4,34
+"Random","Connectance",0.45,45,0.825023782981838,NA,268,13,5,51
+"Abundance","H2'",0.4,40,0.802662079518577,NA,268,12,4,46
+"Random","H2'",0.75,75,0.822550564997803,NA,268,21,8,85
+"Abundance","NODF",0.45,45,0.802113093684185,NA,268,13,5,51
+"Random","NODF",0.75,75,0.831701490180704,NA,268,21,8,85

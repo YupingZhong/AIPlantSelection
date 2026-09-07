@@ -58,7 +58,7 @@ data_merge <- merge(data_interact, data_count_scaled[,c("Flower_data_merger","Fl
     Study_Network_id = coalesce(Study_Network_id.x, Study_Network_id.y)
   ) %>%
   dplyr::select(-Study_Network_id.x, -Study_Network_id.y)%>%
-  mutate(Interaction_addup = ifelse(is.na(Interaction_addup), 0, Interaction_addup))%>% # 替换 `Interaction_addup` 为 NA 的值为 0
+  mutate(Interaction_addup = ifelse(is.na(Interaction_addup), 0, Interaction_addup))%>% 
   mutate(
     Plant_accepted_name = str_squish(str_replace_all(replace_na(Plant_accepted_name, ""), "×", ""))
   ) 
@@ -97,7 +97,6 @@ shape_count %>%
 # Percentage of Pollinator Captured under Subsampling Strategies
 #====================================================
 ### Plant identified to only genus level were excluded before we select the most abundant plant species.
-### 在筛选前十时，必须先摆脱genus, 这一步在筛选的时候已经做了，将plant data都只保留属（interaction的没动）
 
 # ----2.1 Option 1--------------------------------------
 #Sort species within each site in descending order of abundance and select the top 10/5/3 species
@@ -231,42 +230,6 @@ percent_3 <- merged_data3 %>%
 
 # saveRDS(percent_10,"percent_10.rds")
 
-########################################################################
-#proportion of the unique interaction captured
-# unic_inter <- function(subset_data, full_data) {
-#   
-#   subset_n <- subset_data %>%
-#     ungroup() %>%
-#     distinct(
-#       Study_Network_id,
-#       Plant_accepted_name,
-#       Pollinator_accepted_name
-#     ) %>%
-#     count(Study_Network_id, name = "n_subset")
-#   
-#   full_n <- full_data %>%
-#     ungroup() %>%
-#     distinct(
-#       Study_Network_id,
-#       Plant_accepted_name,
-#       Pollinator_accepted_name
-#     ) %>%
-#     count(Study_Network_id, name = "n_total")
-#   
-#   subset_n %>%
-#     left_join(full_n, by = "Study_Network_id") %>%
-#     mutate(prop_interactions = n_subset / n_total)
-# }
-# 
-# cov_10 <- unic_inter(result10, data_interact)
-# cov_5  <- unic_inter(result5, data_interact)
-# cov_3  <- unic_inter(result3, data_interact)
-# 
-# colnames(cov_10)[colnames(cov_10) == "prop_interactions"] <- "Abundant_Top10"
-# colnames(cov_5)[colnames(cov_5) == "prop_interactions"] <- "Abundant_Top5"
-# colnames(cov_3)[colnames(cov_3) == "prop_interactions"] <- "Abundant_Top3"
-
-
 ################################################################################
 
 ###---2.1 Option 2--------------------------------------------
@@ -392,21 +355,6 @@ op2_merged_data_top5 <- merge(op2_sp_number_top5,total_number,by.x = "Study_Netw
 op2_percent_shape_top5 <- op2_merged_data_top5 %>%
   mutate(percentage = (pollinator_count / total_pollinator_count) * 100)
 head(op2_percent_shape_top5)
-
-
-
-
-# #######################
-# 
-# #------unique interactions
-# 
-# ######################
-# head(abun_species_top3_merge)
-# cov_floral_5  <- unic_inter(abun_species_top5_merge, data_interact)
-# cov_floral_3  <- unic_inter(abun_species_top3_merge, data_interact)
-# 
-# colnames(cov_floral_5)[colnames(cov_floral_5) == "prop_interactions"] <- "FlwShape_Top5"
-# colnames(cov_floral_3)[colnames(cov_floral_3) == "prop_interactions"] <- "FlwShape_Top3"
 
 
 
@@ -708,50 +656,6 @@ result_PD3 <- left_join(
   )
 )
 
-# ######interaction coverage
-# PD_cov10 <- unic_inter(
-#   left_join(
-#     PD_selected$PD_top10,
-#     data_interact,
-#     by=c(
-#       "Plant_species"="Plant_original_name",
-#       "Study_Network_id"="Study_Network_id"
-#     )
-#   ),
-#   data_interact
-# )
-# 
-# 
-# PD_cov5 <- unic_inter(
-#   left_join(
-#     PD_selected$PD_top5,
-#     data_interact,
-#     by=c(
-#       "Plant_species"="Plant_original_name",
-#       "Study_Network_id"="Study_Network_id"
-#     )
-#   ),
-#   data_interact
-# )
-# 
-# 
-# PD_cov3 <- unic_inter(
-#   left_join(
-#     PD_selected$PD_top3,
-#     data_interact,
-#     by=c(
-#       "Plant_species"="Plant_original_name",
-#       "Study_Network_id"="Study_Network_id"
-#     )
-#   ),
-#   data_interact
-# )
-# 
-# 
-# colnames(PD_cov10)[4] <- "Phylo_Top10"
-# colnames(PD_cov5)[4]  <- "Phylo_Top5"
-# colnames(PD_cov3)[4]  <- "Phylo_Top3"
-
 
 ###################################################################
 
@@ -880,94 +784,7 @@ random_3 <- merged_random3 %>%
   )
 unique(random_3$Study_Network_id)
 
-# ## unique interaction coverage
-# # main function (ONLY interactions)
-# #========================
-# get_interaction_metrics <- function(n_sp){
-#   
-#   # sample plants
-#   random_sp <- plant_pool %>%
-#     group_by(Study_Network_id) %>%
-#     group_modify(~ {
-#       
-#       df <- .x
-#       n_select <- min(n_sp, nrow(df))
-#       
-#       slice_sample(df, n = n_select)
-#     }) %>%
-#     ungroup()
-#   
-#   # subset interactions
-#   sampled_data <- plant_pollinator %>%
-#     inner_join(
-#       random_sp,
-#       by = c("Study_Network_id",
-#              "Plant_original_name" = "Plant_species")
-#     ) %>%
-#     distinct(
-#       Study_Network_id,
-#       Plant_original_name,
-#       Pollinator_accepted_name
-#     )
-#   
-#   # interaction richness per network
-#   subset_metrics <- sampled_data %>%
-#     group_by(Study_Network_id) %>%
-#     summarise(
-#       interaction_richness = n(),
-#       .groups = "drop"
-#     )
-#   
-#   # full network baseline
-#   full_metrics <- plant_pollinator %>%
-#     distinct(
-#       Study_Network_id,
-#       Plant_original_name,
-#       Pollinator_accepted_name
-#     ) %>%
-#     group_by(Study_Network_id) %>%
-#     summarise(
-#       total_interactions = n(),
-#       .groups = "drop"
-#     )
-#   
-#   # merge + coverage
-#   tibble(Study_Network_id = unique(plant_pool$Study_Network_id)) %>%
-#     left_join(subset_metrics, by = "Study_Network_id") %>%
-#     left_join(full_metrics, by = "Study_Network_id") %>%
-#     mutate(
-#       interaction_richness = ifelse(is.na(interaction_richness), 0, interaction_richness),
-#       interaction_coverage = interaction_richness / total_interactions
-#     )
-# }
-# 
-# #========================
-# #replicate function
-# #========================
-# run_rep <- function(n_sp, n_rep = 1000){
-#   
-#   replicate(n_rep, get_interaction_metrics(n_sp), simplify = FALSE) %>%
-#     bind_rows()
-# }
-# 
-# #========================
-# # Step 4: run scenarios
-# #========================
-# 
-# cov_random_10 <- run_rep(10)
-# cov_random_5  <- run_rep(5)
-# cov_random_3  <- run_rep(3)
-# colnames(cov_random_10)[colnames(cov_random_10) == "interaction_coverage"] <- "Random_10"
-# colnames(cov_random_5)[colnames(cov_random_5) == "interaction_coverage"] <- "Random_5"
-# colnames(cov_random_3)[colnames(cov_random_3) == "interaction_coverage"] <- "Random_3"
-# 
-# saveRDS(cov_random_10,"cov_random_10.rds")
-# saveRDS(cov_random_5,"cov_random_5.rds")
-# saveRDS(cov_random_3,"cov_random_3.rds")
-# 
-# cov_random_10<-readRDS("cov_random_10.rds")
-# cov_random_5<-readRDS("cov_random_5.rds")
-# cov_random_3<-readRDS("cov_random_3.rds")
+
 #######
 library(dplyr)
 library(purrr)
@@ -1041,148 +858,4 @@ saveRDS(percentage_datasets,"data/processed/MainResults_richness.rds")
 saveRDS(subsampled_networks,"data/processed/Subsampled_networks.rds")
 
 
-############ unique coverage result merge
-
-library(dplyr)
-library(purrr)
-
-unic_inter_datasets <- list(
-  cov_10,
-  cov_5,
-  cov_3,
-  cov_floral_5,
-  cov_floral_3,
-  cov_random_10,
-  cov_random_5,
-  cov_random_3
-)
-
-# 修正：用 unic_inter_datasets，不是 datasets
-unic_inter_datasets <- lapply(unic_inter_datasets, function(df) {
-  df %>%
-    mutate(Study_Network_id = as.character(Study_Network_id)) %>%
-    distinct(Study_Network_id, .keep_all = TRUE)
-})
-
-unic_inter_all_networks <- data.frame(
-  Study_Network_id = as.character(unique(plant_pool$Study_Network_id))
-)
-
-# ✔关键修复：用 full_join，不用 bind_rows
-unic_inter_result_all <- reduce(
-  unic_inter_datasets,
-  full_join,
-  by = "Study_Network_id"
-) %>%
-  right_join(unic_inter_all_networks, by = "Study_Network_id")
-
-n_distinct(unic_inter_result_all$Study_Network_id)
-
-write.csv(
-  unic_inter_result_all,
-  "unic_inter_result_all_published.csv",
-  row.names = FALSE
-)
-
-unique(unic_inter_result_all$Study_Network_id)
-
-
-#############################
-# ------------------------------------------------------------
-# Z-score standardization relative to random benchmark
-# ------------------------------------------------------------
-# Formula:
-# Z = (X_strategy - mean_random) / sd_random
-#
-# where:
-# X_strategy:
-#   The percentage of pollinator species captured by the selected
-#   plant species using an informed strategy (e.g., flower abundance,
-#   flower traits, or phylogenetic distance).
-#
-# mean_random:
-#   The mean percentage of pollinator species captured across 1000
-#   random plant selections within the same network.
-#
-# sd_random:
-#   The standard deviation of the percentage captured across the
-#   1000 random selections within the same network.
-
-
-calc_zscore <- function(observed,
-                        random,
-                        strategy,
-                        number){
-  
-  observed %>%
-    left_join(
-      random %>%
-        select(
-          Study_Network_id,
-          random_mean_percentage,
-          random_sd_percentage
-        ),
-      by="Study_Network_id"
-    ) %>%
-    mutate(
-      percentage =
-        pollinator_count /
-        total_pollinator_count *100,
-      
-      Z_score =
-        (percentage-random_mean_percentage)/
-        random_sd_percentage,
-      
-      Strategy=strategy,
-      Plant_number=number
-    )
-}
-
-Abun_z10 <- calc_zscore(percent_10,random_10,"Flower abundance","Top10")
-Abun_z5 <- calc_zscore(percent_5,random_5,"Flower abundance","Top5")
-Abun_z3 <- calc_zscore(percent_3,random_3,"Flower abundance","Top3")
-Shape_z5 <- calc_zscore(op2_percent_shape_top5,random_5,"Flower abundance + shapes","Top5")
-Shape_z3 <- calc_zscore(op2_percent_shape_top3,random_3,"Flower abundance + shapes","Top3")
-PD_z10 <- calc_zscore(PD_percent10,random_10,"Phylogenetic distance","Top10")
-PD_z5 <- calc_zscore(PD_percent5,random_5,"Phylogenetic distance","Top5")
-PD_z3 <- calc_zscore(PD_percent3,random_3,"Phylogenetic distance","Top3")
-
-z_results <- bind_rows(
-  Abun_z10,
-  Abun_z5,
-  Abun_z3,
-  Shape_z5,
-  Shape_z3,
-  PD_z10,
-  PD_z5,
-  PD_z3
-)
-
-z_results <- z_results %>%
-  mutate(
-    Z_score = ifelse(
-      random_sd_percentage == 0,
-      NA,
-      Z_score
-    )
-  )%>%
-  select(
-    Study_Network_id,
-    Strategy,
-    Plant_number,
-    percentage,
-    random_mean_percentage,
-    random_sd_percentage,
-    Z_score
-  )%>%
-  mutate(
-    no_random_variation = random_sd_percentage == 0,
-    Plant_number = factor(
-      Plant_number,
-      levels = c("Top10", "Top5", "Top3")
-    )
-  )
-
-head(z_results)
-saveRDS(z_results,"data/processed/z_results.rds")
 

@@ -1,0 +1,2 @@
+n_networks_reaching_target,n_networks_not_reaching_target,mean_threshold_percent_exact,mean_threshold_percent_rounded_to_10,median_threshold_percent,q25_threshold_percent,q75_threshold_percent
+247,21,41.23481781376518,40,40,25,55.00000000000001

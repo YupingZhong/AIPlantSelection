@@ -1514,17 +1514,7 @@ p_nodf <- ggplot() +
     alpha = 0.5
   ) +
   
-  # geom_line(
-  #   data = r_curve_random,
-  #   aes(
-  #     x = n,
-  #     y = rho_nodf_mean
-  #   ),
-  #   color = "grey50",
-  #   linetype = "dashed",
-  #   linewidth = 1,
-  #   alpha = 0.7
-# ) +
+
 
 geom_point(
   data = r_curve,
@@ -1616,19 +1606,7 @@ p_H2 <- ggplot() +
     alpha = 0.5
   ) +
   
-  # geom_line(
-  #   data = r_curve_random,
-  #   aes(
-  #     x = n,
-  #     y = rho_H2_mean
-  #   ),
-  #   color = "grey50",
-  #   linetype = "dashed",
-  #   linewidth = 1,
-  #   alpha = 0.7
-  # ) +
-  
-  geom_point(
+   geom_point(
     data = r_curve,
     aes(
       x = n,

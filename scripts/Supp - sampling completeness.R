@@ -3,14 +3,11 @@
 
 #############################
 # -----------------------------
-# 完整版：Pollinator Sampling Completeness
-# -----------------------------
 library(dplyr)
 library(iNEXT)
 library(ggplot2)
 data_merge <- readRDS("data/processed/data_merge.rds")
-# -----------------------------
-# 1. 准备每个网络的 pollinator abundance
+
 # -----------------------------
 pollinator_abundance_list <- data_merge %>%
   filter(!is.na(Pollinator_accepted_name)) %>%
@@ -19,8 +16,7 @@ pollinator_abundance_list <- data_merge %>%
   group_by(Study_Network_id) %>%
   summarise(abundance_vec = list(abundance), .groups = "drop")
 
-# -----------------------------
-# 2. 计算每个网络的 sample coverage
+
 # -----------------------------
 library(dplyr)
 library(iNEXT)
@@ -30,7 +26,7 @@ coverage_results <- lapply(1:nrow(pollinator_abundance_list), function(i){
   net_id <- pollinator_abundance_list$Study_Network_id[i]
   abund  <- pollinator_abundance_list$abundance_vec[[i]]
   
-  # 防御式检查
+  
   if(length(abund) < 2 || sum(abund) < 2){
     return(data.frame(
       Study_Network_id = net_id,
@@ -50,9 +46,7 @@ coverage_results <- do.call(rbind, coverage_results)
 
 summary(coverage_results$coverage_est)
 
-# -----------------------------
-# 3. 保存 CSV
-# -----------------------------
+
 write.csv(coverage_results, "pollinator_sampling_completeness.csv", row.names = FALSE)
 
 #################################################################

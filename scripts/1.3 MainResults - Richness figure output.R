@@ -703,7 +703,7 @@ scale_color_viridis_c(
   option = "turbo",
   begin = 0.18,
   end = 0.90,
-  name = "Flowering species per network",
+  name = "Flowering species richness per network",
   breaks = breaks_pretty(
     n = 5
   )
