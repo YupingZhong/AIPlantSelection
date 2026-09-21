@@ -857,8 +857,14 @@ ggsave(
 # 7. Figure 4a: functional-group composition
 # ==============================================================================
 
+# Omit Other from display only; retain the original proportion denominator.
+plot_group_order <- setdiff(group_order, "Other")
+plot_df_display <- plot_df %>%
+  filter(functional_group != "Other") %>%
+  mutate(functional_group = factor(functional_group, levels = plot_group_order))
+
 visit_group <- ggplot(
-  plot_df,
+  plot_df_display,
   aes(
     x = flw_shape_revised,
     y = mean_prop,
@@ -874,7 +880,8 @@ visit_group <- ggplot(
     expand = expansion(mult = c(0, 0.04))
   ) +
   scale_fill_manual(
-    values = group_cols,
+    values = group_cols[plot_group_order],
+    breaks = plot_group_order,
     drop = FALSE
   ) +
   labs(
@@ -900,6 +907,7 @@ visit_group <- ggplot(
   guides(
     fill = guide_legend(
       nrow = 2,
+      ncol = 3,
       byrow = TRUE,
       title.position = "top"
     )
@@ -948,6 +956,7 @@ p_within_shape <- ggplot(
   ) +
   geom_jitter(
     aes(colour = N_plants),
+    height = 0, # Jitter categories only; keep dissimilarity values within their bounds.
     width = 0.12,
     size = 1.2,
     alpha = 0.40
@@ -955,7 +964,7 @@ p_within_shape <- ggplot(
   scale_colour_viridis_c(
     option = "viridis",
     direction = -1,
-    name = "Plant species\nper network × shape"
+    name = "Within-network richness"
   ) +
   geom_errorbar(
     data = within_shape_emm_df,
@@ -1025,8 +1034,16 @@ p_within_shape <- ggplot(
 # 9. Combine and save Figure 4
 # ==============================================================================
 
-legend_functional <- cowplot::get_legend(visit_group)
-legend_richness <- cowplot::get_legend(p_within_shape)
+get_bottom_legend <- function(p) {
+  g <- ggplot2::ggplotGrob(p + theme(legend.position = "bottom"))
+  ids <- grep("^guide-box", g$layout$name)
+  ids <- ids[!vapply(g$grobs[ids], inherits, logical(1), "zeroGrob")]
+  if (!length(ids)) stop("No visible legend was generated.")
+  g$grobs[[ids[1]]]
+}
+
+legend_functional <- get_bottom_legend(visit_group)
+legend_richness <- get_bottom_legend(p_within_shape)
 
 panel_a <- visit_group + theme(legend.position = "none")
 panel_b <- p_within_shape + theme(legend.position = "none")
@@ -1114,36 +1131,3 @@ ggsave(
 )
 
 
-# ==============================================================================
-# 10. Suggested interpretation for the manuscript
-# ==============================================================================
-#
-# Question 1:
-#   Report the FlowerShape row from
-#   Flower_shape_PERMANOVA_network_adjusted.csv.
-#
-# Question 2:
-#   Report the mixed model and pairwise comparisons from
-#   Within_network_shape_Sorensen_pairwise.csv.
-#
-# Suitable Results wording after replacing XX with the new output:
-#
-#   "Flower shape was associated with pollinator-genus composition after
-#   accounting for study identity and restricting permutations within networks
-#   (PERMANOVA: R2 = XX, P = XX), although it
-#   explained only a small proportion of compositional variation. Within
-#   individual networks, plant species sharing the same flower-shape category
-#   nevertheless showed substantial pairwise Sorensen dissimilarity in their
-#   pollinator assemblages. This within-category heterogeneity may help explain
-#   why incorporating flower shape did not improve plant-selection performance
-#   beyond floral abundance alone."
-#
-# Important:
-#   Association does not prove that flower shape caused composition differences.
-#   High within-shape dissimilarity is a potential explanation for the sampling
-#   result and should therefore be described as "may help explain".
-
-cat("\nAnalysis complete.\n")
-cat("Cached files:", cache_dir, "\n")
-cat("Tables and figures:", result_dir, "\n")
-cat("For later plotting, set all three RUN_* settings to FALSE.\n")
