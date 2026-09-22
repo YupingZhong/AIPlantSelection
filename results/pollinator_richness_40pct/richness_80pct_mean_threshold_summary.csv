@@ -1,4 +1,0 @@
-definition,strategy,target_pollinator_richness_percent,threshold_sampling_percent,exact_unrounded_value,n_networks_contributing,note
-"Manuscript estimate: mean of per-network 80%-richness thresholds, rounded to nearest 10 percentage points",Flower abundance (descending within network),80,40,41.23481781376518,247,This is the calculation supporting the rounded 40% statement.
-Median of per-network 80%-richness thresholds,Flower abundance (descending within network),80,40,40,247,The median network requires 40% of its flowering plants.
-Strict alternative: first 5%-grid proportion where the across-network mean richness captured is >= 80%,Flower abundance (descending within network),80,45,45,268,"At 40%, the across-network mean captured richness is 77.82%; this stricter curve reaches 80% at 45%."
