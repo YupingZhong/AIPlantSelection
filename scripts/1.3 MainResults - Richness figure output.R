@@ -909,12 +909,14 @@ plot_violin_size
 
 
 ggsave(
-  "/Chap1_TargetPlant_to_monitor/result_260723/main_violin_network_size.png",
+  "/Chap1_TargetPlant_to_monitor/result_submission/main_violin_network_size.tiff",
   plot = plot_violin_size,
+  device = "tiff",
   width = 9,
   height = 5,
   units = "in",
   dpi = 600,
+  compression = "lzw",
   bg = "white"
 )
 

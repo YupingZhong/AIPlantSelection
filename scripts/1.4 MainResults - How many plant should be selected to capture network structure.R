@@ -1792,12 +1792,14 @@ print(combined_plot_suf)
 # =============================================================================
 
 ggsave(
-  "D:/Chap1_TargetPlant_to_monitor/result_260723/spearman_sufficient_n_plant_network_metrics.png",
-  combined_plot_suf,
+  filename = "D:/Chap1_TargetPlant_to_monitor/result_submission/Figure_2.tiff",
+  plot = combined_plot_suf,
+  device = "tiff",
   width = 13,
   height = 4.7,
   units = "in",
   dpi = 600,
+  compression = "lzw",
   bg = "white"
 )
 

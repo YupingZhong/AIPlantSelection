@@ -30,7 +30,7 @@ library(officer)
 # ==============================================================================
 
 data_dir <- file.path("data", "processed")
-result_dir <- "results"
+result_dir <- "/Chap1_TargetPlant_to_monitor/result_submission"
 
 dir.create(
   result_dir,
@@ -805,15 +805,17 @@ final_factor_fig <- plot_grid(
 print(final_factor_fig)
 
 ggsave(
-  file.path(
+  filename = file.path(
     result_dir,
-    "Fig_Factors_subsampling_effectiveness.png"
+    "Figure_3.tiff"
   ),
-  final_factor_fig,
+  plot = final_factor_fig,
+  device = "tiff",
   width = 14,
   height = 5,
   units = "in",
   dpi = 600,
+  compression = "lzw",
   bg = "white"
 )
 
