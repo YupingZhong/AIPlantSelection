@@ -30,7 +30,7 @@ library(officer)
 # ==============================================================================
 
 data_dir <- file.path("data", "processed")
-result_dir <- "/Chap1_TargetPlant_to_monitor/result_submission"
+result_dir <- "/Chap1_TargetPlant_to_monitor/result_revision"
 
 dir.create(
   result_dir,
@@ -367,11 +367,19 @@ p_richness <- ggplot(
   )  +
   
   geom_smooth(
+    aes(linetype = Predictor),
     method = "lm",
     formula = y ~ x,
     se = FALSE,
     linewidth = 0.9
-  )  +
+  ) +
+  scale_linetype_manual(
+    values = c(
+      "Plant richness" = "solid",
+      "Pollinator richness" = "dashed"
+    ),
+    guide = "none"
+  ) +
   
   scale_color_manual(
     values = richness_colors,

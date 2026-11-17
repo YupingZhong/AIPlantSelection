@@ -1,3 +1,5 @@
+# REVISED: Figure stars and Table S1 share the same Holm-adjusted test family.
+# Original output paths are retained; review them before running.
 #######################################################################
 # 2.4 Plot main results: violin + paired networks + network size
 #
@@ -396,9 +398,291 @@ for (
 # Combine significance results
 # ==========================================================
 
+table_data <- result_all %>%
+  dplyr::select(
+    Study_Network_id,
+    
+    # Abundance
+    Top10_Abundance = percentage_Abun10,
+    Top5_Abundance  = percentage_Abun5,
+    Top3_Abundance  = percentage_Abun3,
+    
+    # Abundance + flower shape
+    Top5_Shape = percentage_FlwShape5,
+    Top3_Shape = percentage_FlwShape3,
+    
+    # Phylogenetic
+    Top10_Phylo = percentage_Pylo10,
+    Top5_Phylo  = percentage_Pylo5,
+    Top3_Phylo  = percentage_Pylo3,
+    
+    # Random
+    Random10 = random_mean_percentage_Random10,
+    Random5  = random_mean_percentage_Random5,
+    Random3  = random_mean_percentage_Random3
+  )
+
+
+# ==========================================================
+# 2. Function for paired Wilcoxon comparison
+# ==========================================================
+
+run_table_test <- function(
+    data,
+    var1,
+    var2,
+    comparison
+) {
+  
+  x <- data[[var1]]
+  y <- data[[var2]]
+  
+  valid <- !is.na(x) & !is.na(y)
+  
+  x <- x[valid]
+  y <- y[valid]
+  
+  n <- length(x)
+  
+  if (n < 3) {
+    
+    return(
+      tibble(
+        Comparison = comparison,
+        n = n,
+        Median1 = NA_real_,
+        Median2 = NA_real_,
+        P_value = NA_real_
+      )
+    )
+    
+  }
+  
+  test <- wilcox.test(
+    x,
+    y,
+    paired = TRUE,
+    alternative = "two.sided",
+    exact = FALSE
+  )
+  
+  tibble(
+    Comparison = comparison,
+    n = n,
+    Median1 = median(x, na.rm = TRUE),
+    Median2 = median(y, na.rm = TRUE),
+    P_value = test$p.value
+  )
+}
+
+
+# ==========================================================
+# 3. Run all Table S1 comparisons
+# ==========================================================
+
+table_s1 <- bind_rows(
+  
+  # --------------------------------------------------------
+  # Within-strategy comparisons
+  # --------------------------------------------------------
+  
+  run_table_test(
+    table_data,
+    "Top10_Abundance",
+    "Top5_Abundance",
+    "Top 10 abundant vs Top 5 abundant"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Top5_Abundance",
+    "Top3_Abundance",
+    "Top 5 abundant vs Top 3 abundant"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Top5_Shape",
+    "Top3_Shape",
+    "Top 5 flower-shape vs Top 3 flower-shape"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Random10",
+    "Random5",
+    "Random 10 vs Random 5"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Random5",
+    "Random3",
+    "Random 5 vs Random 3"
+  ),
+  
+  # --------------------------------------------------------
+  # Abundance vs Random
+  # --------------------------------------------------------
+  
+  run_table_test(
+    table_data,
+    "Top10_Abundance",
+    "Random10",
+    "Top 10 abundant vs Random 10"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Top5_Abundance",
+    "Random5",
+    "Top 5 abundant vs Random 5"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Top3_Abundance",
+    "Random3",
+    "Top 3 abundant vs Random 3"
+  ),
+  
+  # --------------------------------------------------------
+  # Flower shape vs Random
+  # --------------------------------------------------------
+  
+  run_table_test(
+    table_data,
+    "Top5_Shape",
+    "Random5",
+    "Top 5 flower-shape vs Random 5"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Top3_Shape",
+    "Random3",
+    "Top 3 flower-shape vs Random 3"
+  ),
+  
+  # --------------------------------------------------------
+  # Abundance vs Abundance + flower shape
+  # --------------------------------------------------------
+  
+  run_table_test(
+    table_data,
+    "Top5_Abundance",
+    "Top5_Shape",
+    "Top 5 abundant vs Top 5 flower-shape"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Top3_Abundance",
+    "Top3_Shape",
+    "Top 3 abundant vs Top 3 flower-shape"
+  ),
+  
+  
+  # --------------------------------------------------------
+  # Abundance vs phylogenetic
+  # --------------------------------------------------------
+  run_table_test(
+    table_data,
+    "Top10_Abundance",
+    "Top10_Phylo",
+    "Top 10 abundant vs Top 10 phylogenetic"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Top5_Abundance",
+    "Top5_Phylo",
+    "Top 5 abundant vs Top 5 phylogenetic"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Top3_Abundance",
+    "Top3_Phylo",
+    "Top 3 abundant vs Top 3 phylogenetic"
+  ),
+  
+  # Phylogenetic vs Random
+  run_table_test(
+    table_data,
+    "Top10_Phylo",
+    "Random10",
+    "Top 10 phylogenetic vs Random 10"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Top5_Phylo",
+    "Random5",
+    "Top 5 phylogenetic vs Random 5"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Top3_Phylo",
+    "Random3",
+    "Top 3 phylogenetic vs Random 3"
+  ),
+  
+  # Phylogenetic vs Flower-shape
+  run_table_test(
+    table_data,
+    "Top5_Phylo",
+    "Top5_Shape",
+    "Top 5 phylogenetic vs Top 5 flower-shape"
+  ),
+  
+  run_table_test(
+    table_data,
+    "Top3_Phylo",
+    "Top3_Shape",
+    "Top 3 phylogenetic vs Top 3 flower-shape"
+  )
+)
+
+
+
+
+# ==========================================================
+# 4. Adjust and format P values
+# ==========================================================
+
+
+# One shared Holm family for all comparisons listed in Table S1.
+comparison_results <- table_s1 %>%
+  mutate(P_adjusted = p.adjust(P_value, method = "holm"))
+
 sig_results <- bind_rows(
   sig_results
 )
+
+# Use exactly the Table S1 adjusted values for figure stars.
+sig_results <- sig_results %>%
+  mutate(
+    Table_comparison = case_when(
+      comparison == "Abundance vs Random" ~ paste0("Top ", sub("Top", "", as.character(Plant_Number)), " abundant vs Random ", sub("Top", "", as.character(Plant_Number))),
+      comparison == "Abundance vs Phylogenetic" ~ paste0("Top ", sub("Top", "", as.character(Plant_Number)), " abundant vs Top ", sub("Top", "", as.character(Plant_Number)), " phylogenetic"),
+      comparison == "Abundance + shape vs Abundance" ~ paste0("Top ", sub("Top", "", as.character(Plant_Number)), " abundant vs Top ", sub("Top", "", as.character(Plant_Number)), " flower-shape"),
+      TRUE ~ NA_character_
+    ),
+    p_raw = p
+  ) %>%
+  left_join(comparison_results %>% dplyr::select(Table_comparison = Comparison, p_holm = P_adjusted),
+            by = "Table_comparison")
+stopifnot(!anyNA(sig_results$Table_comparison))
+stopifnot(all(sig_results$Table_comparison %in% comparison_results$Comparison))
+sig_results$p <- sig_results$p_holm
+# Inspect this object to see raw vs adjusted P values and star changes.
+significance_audit <- sig_results %>%
+  mutate(stars_raw = case_when(is.na(p_raw) ~ "NA", p_raw < .001 ~ "***", p_raw < .01 ~ "**", p_raw < .05 ~ "*", TRUE ~ "ns"),
+         stars_holm = case_when(is.na(p_holm) ~ "NA", p_holm < .001 ~ "***", p_holm < .01 ~ "**", p_holm < .05 ~ "*", TRUE ~ "ns"))
+print(significance_audit)
+
 
 sig_results$Plant_Number <- factor(
   sig_results$Plant_Number,
@@ -909,7 +1193,7 @@ plot_violin_size
 
 
 ggsave(
-  "/Chap1_TargetPlant_to_monitor/result_submission/main_violin_network_size.tiff",
+  "/Chap1_TargetPlant_to_monitor/result_revision/main_violin_network_size.tiff",
   plot = plot_violin_size,
   device = "tiff",
   width = 9,
@@ -931,223 +1215,7 @@ ggsave(
 # 1. Prepare paired comparison data
 # ==========================================================
 
-table_data <- result_all %>%
-  dplyr::select(
-    Study_Network_id,
-    
-    # Abundance
-    Top10_Abundance = percentage_Abun10,
-    Top5_Abundance  = percentage_Abun5,
-    Top3_Abundance  = percentage_Abun3,
-    
-    # Abundance + flower shape
-    Top5_Shape = percentage_FlwShape5,
-    Top3_Shape = percentage_FlwShape3,
-    
-    # Phylogenetic
-    Top10_Phylo = percentage_Pylo10,
-    Top5_Phylo  = percentage_Pylo5,
-    Top3_Phylo  = percentage_Pylo3,
-    
-    # Random
-    Random10 = random_mean_percentage_Random10,
-    Random5  = random_mean_percentage_Random5,
-    Random3  = random_mean_percentage_Random3
-  )
-
-
-# ==========================================================
-# 2. Function for paired Wilcoxon comparison
-# ==========================================================
-
-run_table_test <- function(
-    data,
-    var1,
-    var2,
-    comparison
-) {
-  
-  x <- data[[var1]]
-  y <- data[[var2]]
-  
-  valid <- !is.na(x) & !is.na(y)
-  
-  x <- x[valid]
-  y <- y[valid]
-  
-  n <- length(x)
-  
-  if (n < 3) {
-    
-    return(
-      tibble(
-        Comparison = comparison,
-        n = n,
-        Median1 = NA_real_,
-        Median2 = NA_real_,
-        P_value = NA_real_
-      )
-    )
-    
-  }
-  
-  test <- wilcox.test(
-    x,
-    y,
-    paired = TRUE,
-    alternative = "two.sided",
-    exact = FALSE
-  )
-  
-  tibble(
-    Comparison = comparison,
-    n = n,
-    Median1 = median(x, na.rm = TRUE),
-    Median2 = median(y, na.rm = TRUE),
-    P_value = test$p.value
-  )
-}
-
-
-# ==========================================================
-# 3. Run all Table S1 comparisons
-# ==========================================================
-
-table_s1 <- bind_rows(
-  
-  # --------------------------------------------------------
-  # Within-strategy comparisons
-  # --------------------------------------------------------
-  
-  run_table_test(
-    table_data,
-    "Top10_Abundance",
-    "Top5_Abundance",
-    "Top 10 abundant vs Top 5 abundant"
-  ),
-  
-  run_table_test(
-    table_data,
-    "Top5_Abundance",
-    "Top3_Abundance",
-    "Top 5 abundant vs Top 3 abundant"
-  ),
-  
-  run_table_test(
-    table_data,
-    "Top5_Shape",
-    "Top3_Shape",
-    "Top 5 flower-shape vs Top 3 flower-shape"
-  ),
-  
-  run_table_test(
-    table_data,
-    "Random10",
-    "Random5",
-    "Random 10 vs Random 5"
-  ),
-  
-  run_table_test(
-    table_data,
-    "Random5",
-    "Random3",
-    "Random 5 vs Random 3"
-  ),
-  
-  # --------------------------------------------------------
-  # Abundance vs Random
-  # --------------------------------------------------------
-  
-  run_table_test(
-    table_data,
-    "Top10_Abundance",
-    "Random10",
-    "Top 10 abundant vs Random 10"
-  ),
-  
-  run_table_test(
-    table_data,
-    "Top5_Abundance",
-    "Random5",
-    "Top 5 abundant vs Random 5"
-  ),
-  
-  run_table_test(
-    table_data,
-    "Top3_Abundance",
-    "Random3",
-    "Top 3 abundant vs Random 3"
-  ),
-  
-  # --------------------------------------------------------
-  # Flower shape vs Random
-  # --------------------------------------------------------
-  
-  run_table_test(
-    table_data,
-    "Top5_Shape",
-    "Random5",
-    "Top 5 flower-shape vs Random 5"
-  ),
-  
-  run_table_test(
-    table_data,
-    "Top3_Shape",
-    "Random3",
-    "Top 3 flower-shape vs Random 3"
-  ),
-  
-  # --------------------------------------------------------
-  # Abundance vs Abundance + flower shape
-  # --------------------------------------------------------
-  
-  run_table_test(
-    table_data,
-    "Top5_Abundance",
-    "Top5_Shape",
-    "Top 5 abundant vs Top 5 flower-shape"
-  ),
-  
-  run_table_test(
-    table_data,
-    "Top3_Abundance",
-    "Top3_Shape",
-    "Top 3 abundant vs Top 3 flower-shape"
-  ),
-  
-  
-  # --------------------------------------------------------
-  # Abundance vs phylogenetic
-  # --------------------------------------------------------
-  run_table_test(
-    table_data,
-    "Top10_Abundance",
-    "Top10_Phylo",
-    "Top 10 abundant vs Top 10 phylogenetic"
-  ),
-  
-  run_table_test(
-    table_data,
-    "Top5_Abundance",
-    "Top5_Phylo",
-    "Top 5 abundant vs Top 5 phylogenetic"
-  ),
-  
-  run_table_test(
-    table_data,
-    "Top3_Abundance",
-    "Top3_Phylo",
-    "Top 3 abundant vs Top 3 phylogenetic"
-  )
-)
-
-
-
-
-# ==========================================================
-# 4. Adjust and format P values
-# ==========================================================
-
+# Raw tests already computed before figure annotation; reuse below.
 table_s1 <- table_s1 %>%
   mutate(
     P_adjusted = p.adjust(
@@ -1166,7 +1234,7 @@ table_s1 <- table_s1 %>%
       )
     )
   ) %>%
-  select(
+  dplyr::select(
     Comparison,
     n,
     Median1,
@@ -1188,7 +1256,7 @@ print(table_s1)
 
 write.csv(
   table_s1,
-  "/Chap1_TargetPlant_to_monitor/result_260723/Table_S1_Pairwise_Wilcoxon.csv",
+  "/Chap1_TargetPlant_to_monitor/result_revision/Table_S1_Pairwise_Wilcoxon.csv",
   row.names = FALSE
 )
 
@@ -1297,6 +1365,6 @@ doc_table_s1 <- read_docx() %>%
 print(
   doc_table_s1,
   target =
-    "/Chap1_TargetPlant_to_monitor/result_260723/Table_S1_Pairwise_Wilcoxon.docx"
+    "/Chap1_TargetPlant_to_monitor/result_revision/Table_S1_Pairwise_Wilcoxon.docx"
 )
 

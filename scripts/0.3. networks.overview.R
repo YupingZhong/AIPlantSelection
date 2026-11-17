@@ -174,7 +174,7 @@ supp_fig <- plot_grid(
 supp_fig
 
 ggsave(
-  "/Chap1_TargetPlant_to_monitor/result_260723/Supplementary_Figure.png",
+  "/Chap1_TargetPlant_to_monitor/result_revision/Supplementary_Figure.png",
   supp_fig,
   width = 10,
   height = 6,
@@ -184,7 +184,7 @@ ggsave(
 )
 
 ggsave(
-  "/Chap1_TargetPlant_to_monitor/result_260723/Supplementary_Figure.pdf",
+  "/Chap1_TargetPlant_to_monitor/result_revision/Supplementary_Figure.pdf",
   supp_fig,
   width = 12,
   height = 9,

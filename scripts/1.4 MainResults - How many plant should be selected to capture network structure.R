@@ -627,7 +627,6 @@ get_structure_curve <- function(
       )
     }
   }
-  
   return(results)
 }
 
@@ -960,8 +959,6 @@ get_structure_curve_random <- function(
           )
       )
     )
-    
-    
     if (verbose) {
       
       cat(
@@ -1022,6 +1019,7 @@ r_curve_random <- get_structure_curve_random(
 )
 
 
+
 # =============================================================================
 # 14. Save sampling curve results
 # =============================================================================
@@ -1049,8 +1047,8 @@ print(r_curve_random)
 
 ######################### read and plot. dont have to run radom process every time
 
-r_curve <- readRDS("data/processed/spearman_r_curve.rds")
-r_curve_random <- readRDS("data/processed/spearman_r_curve_random.rds")
+#r_curve <- readRDS("data/processed/spearman_r_curve.rds")
+#r_curve_random <- readRDS("data/processed/spearman_r_curve_random.rds")
 # =============================================================================
 # 16. Saturation model
 # =============================================================================
@@ -1792,7 +1790,7 @@ print(combined_plot_suf)
 # =============================================================================
 
 ggsave(
-  filename = "D:/Chap1_TargetPlant_to_monitor/result_submission/Figure_2.tiff",
+  filename = "D:/Chap1_TargetPlant_to_monitor/result_revision/Figure_2.tiff",
   plot = combined_plot_suf,
   device = "tiff",
   width = 13,
@@ -1835,3 +1833,4 @@ saveRDS(
 # =============================================================================
 # END
 # =============================================================================
+

@@ -8,6 +8,7 @@
 # ==========================================================
 
 library(dplyr)
+library(purrr)
 library(tidyr)
 library(stringr)
 library(ggplot2)
@@ -109,8 +110,11 @@ analyze_pollinator_order <- function(pollinator_order_name) {
         .groups = "drop"
       )
     
-    result %>%
-      left_join(total_number, by = "Study_Network_id") %>%
+    top_species %>%
+      distinct(Study_Network_id) %>%
+      inner_join(total_number, by = "Study_Network_id") %>%
+      filter(total_pollinator_count > 0) %>%
+      left_join(result, by = "Study_Network_id") %>%
       replace_na(list(pollinator_count = 0)) %>%
       mutate(
         percentage = (pollinator_count / total_pollinator_count) * 100,
@@ -135,7 +139,7 @@ analyze_pollinator_order <- function(pollinator_order_name) {
       group_by(Study_Network_id, flw_shape_revised) %>%
       arrange(Study_Network_id, flw_shape_revised, 
               desc(Flower_count_scaled)) %>%
-      top_n(1, wt = Flower_count_scaled) %>%
+      slice_max(order_by = Flower_count_scaled, n = 1, with_ties = FALSE) %>%
       distinct(Study_Network_id, Plant_species, Flower_count_scaled) %>%
       group_by(Study_Network_id) %>%
       mutate(rank = rank(desc(Flower_count_scaled), ties.method = "first")) %>%
@@ -162,8 +166,11 @@ analyze_pollinator_order <- function(pollinator_order_name) {
         .groups = "drop"
       )
     
-    result %>%
-      left_join(total_number, by = "Study_Network_id") %>%
+    abun_species %>%
+      distinct(Study_Network_id) %>%
+      inner_join(total_number, by = "Study_Network_id") %>%
+      filter(total_pollinator_count > 0) %>%
+      left_join(result, by = "Study_Network_id") %>%
       replace_na(list(pollinator_count = 0)) %>%
       mutate(
         percentage = (pollinator_count / total_pollinator_count) * 100,
@@ -268,7 +275,8 @@ analyze_pollinator_order <- function(pollinator_order_name) {
       summarise(
         pollinator_count = n_distinct(
           Pollinator_accepted_name[Interaction_addup > 0 & 
-                                     !is.na(Pollinator_accepted_name)]
+                                     !is.na(Pollinator_accepted_name)],
+          na.rm = TRUE
         ),
         .groups = "drop"
       ) %>%
@@ -300,6 +308,7 @@ analyze_pollinator_order <- function(pollinator_order_name) {
              .keep_all = TRUE)
   
   plant_pollinator <- data_interact_filt %>%
+    filter(Interaction_addup > 0, !is.na(Pollinator_accepted_name)) %>%
     select(Study_Network_id, Plant_original_name, Pollinator_accepted_name)
   
   get_pollinator_count <- function(n_sp){
@@ -319,7 +328,7 @@ analyze_pollinator_order <- function(pollinator_order_name) {
                         "Plant_original_name" = "Plant_species")) %>%
       group_by(Study_Network_id) %>%
       summarise(
-        pollinator_count = n_distinct(Pollinator_accepted_name),
+        pollinator_count = n_distinct(Pollinator_accepted_name, na.rm = TRUE),
         .groups = "drop"
       )
     
@@ -411,7 +420,7 @@ all_results <- map_df(
 )
 
 
-random_networks <- data_interact %>%
+networks_by_order <- data_interact %>%
   filter(
     Interaction_addup > 0,
     !is.na(Pollinator_order)

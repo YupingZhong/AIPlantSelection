@@ -1813,7 +1813,7 @@ combined_plot
 
 ggsave(
   
-  "D:/Chap1_TargetPlant_to_monitor/result_260723/network.matrix_H2.png",
+  "D:/Chap1_TargetPlant_to_monitor/result_revision/network.matrix_H2.png",
   
   combined_plot,
   

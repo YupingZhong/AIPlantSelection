@@ -46,6 +46,80 @@ plant_unit <- read.csv("data/raw/plant_sampling_unit.csv") %>%
   dplyr::select("Study_id","Flower.sampling.methods")
 
 # ==========================================================
+# Hoiss study: retain control treatment only
+# Apply BEFORE any abundance or interaction aggregation
+# ==========================================================
+
+keep_hoiss_control <- function(df) {
+  
+  is_hoiss <- !is.na(df$Study_id) &
+    df$Study_id == "20_Hoiss"
+  
+  # 仅解析 Hoiss 记录
+  h <- df[is_hoiss, ]
+  
+  if ("Date" %in% names(h)) {
+    # 交互数据
+    date <- as.Date(h$Date)
+    
+    suffix <- paste0(
+      h$Network_id,
+      lubridate::day(date), "-",
+      lubridate::month(date), "-",
+      lubridate::year(date)
+    )
+  } else {
+    # 花丰度数据
+    suffix <- paste0(
+      h$Site_id,
+      h$Day, "-", h$Month, "-", h$Year
+    )
+  }
+  
+  key <- as.character(h$Flower_data_merger)
+  
+  if (anyNA(key) || anyNA(suffix) ||
+      any(!endsWith(key, suffix))) {
+    stop("Hoiss treatment keys could not be parsed.")
+  }
+  
+  # 去掉地点和日期后，末尾两个字符就是处理编码
+  prefix <- substr(key, 1L, nchar(key) - nchar(suffix))
+  treatment <- substr(
+    prefix,
+    nchar(prefix) - 1L,
+    nchar(prefix)
+  )
+  
+  if (any(!treatment %in% c("co", "ad", "de", "dr"))) {
+    stop("Unexpected Hoiss treatment code.")
+  }
+  
+  keep <- rep(TRUE, nrow(df))
+  keep[is_hoiss] <- treatment == "co"
+  
+  df[keep, ]
+}
+# Filter BOTH datasets
+metadata <- keep_hoiss_control(metadata)
+meta_count <- keep_hoiss_control(meta_count)
+
+# Check retained Hoiss records
+cat(
+  "Hoiss control interaction rows:",
+  sum(metadata$Study_id == "20_Hoiss", na.rm = TRUE),
+  "\n"
+)
+
+cat(
+  "Hoiss control flower rows:",
+  sum(meta_count$Study_id == "20_Hoiss", na.rm = TRUE),
+  "\n"
+)
+
+
+
+# ==========================================================
 # Clean plant names
 # ==========================================================
 
@@ -154,19 +228,33 @@ interact_not_in_count <- setdiff(study_network_id_interact, study_network_id_cou
 
 #data filtering and scaling 
 #calculate average plant abundance for each plant species in the plant survey data. 
-data_count_scaled <- meta_count %>%
-  #filter(!Study_Network_id%in%count_not_in_interact) %>%
-  group_by(Plant_species,Study_Network_id, Year, Month, Day) %>%
-  mutate(Flower_count = sum(Flower_count, na.rm = TRUE)) %>%
-  ungroup() %>%
-  group_by(Plant_species, Study_Network_id) %>% # Year seperate
-  filter (!Flower_count == 0) %>%
-  mutate(Flower_count_scaled = mean(Flower_count, na.rm = TRUE)) %>%
-  distinct(Flower_count_scaled, Plant_species, Study_Network_id, .keep_all = TRUE)%>%
-  group_by(Flower_data_merger) %>%
-  filter(n() == 1) %>%
-  ungroup()
+# date
+survey_counts <- meta_count %>%
+  distinct(Study_Network_id, Year, Month, Day) %>%
+  count(Study_Network_id, name = "n_survey_dates")
 
+
+flower_totals <- meta_count %>%
+  group_by(Plant_species, Study_Network_id) %>%
+  summarise(
+    Flower_abundance_sum = sum(Flower_count, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  filter(Flower_abundance_sum > 0) %>%
+  left_join(survey_counts, by = "Study_Network_id") %>%
+  mutate(
+    Flower_count_scaled =
+      Flower_abundance_sum / n_survey_dates
+  )
+
+data_count_scaled <- meta_count %>%
+  distinct(Plant_species, Study_Network_id, .keep_all = TRUE) %>%
+  dplyr::select(-Flower_count) %>%
+  inner_join(
+    flower_totals,
+    by = c("Plant_species", "Study_Network_id")
+  ) %>%
+  mutate(Flower_count = Flower_count_scaled)
 #Removed networks with no separate plant survey. 
 data_count_scaled <- data_count_scaled %>%
   filter(!Study_Network_id %in% count_not_in_interact)
@@ -294,7 +382,7 @@ histogram_1 <- ggdraw() +
 
 print(histogram_1)#750*350
 
-ggsave("/Chap1_TargetPlant_to_monitor/result_260723/hist1.png", histogram_1, width = 7.5, height = 3.5, units = "in", dpi = 600)
+ggsave("/Chap1_TargetPlant_to_monitor/result_revision/hist1.png", histogram_1, width = 7.5, height = 3.5, units = "in", dpi = 600)
 
 ## filtering
 data_interact<-data_interact%>%
@@ -352,7 +440,7 @@ histogram_2 <- ggplot(
 
 print(histogram_2)#750*350
 
-ggsave("/Chap1_TargetPlant_to_monitor/result_260723/hist2.png", histogram_2, width = 7.5, height = 3.5, units = "in", dpi = 600)
+ggsave("/Chap1_TargetPlant_to_monitor/result_revision/hist2.png", histogram_2, width = 7.5, height = 3.5, units = "in", dpi = 600)
 
 few_sp <- data_interact %>%
   filter(!is.na(Plant_accepted_name)) %>%       # Exclude NA values
@@ -420,18 +508,22 @@ plant_unit = plant_unit %>%
 names(plant_unit) <- c("Study ID", "Flower sampling methods")
 
 
-ft <- flextable(plant_unit) %>%
-  theme_booktabs() %>%                     # Three-line table style
-  fontsize(size = 11, part = "all") %>%    # Font size
-  font(fontname = "Arial", part = "all") %>%
-  
-  # Journal-style column widths
-  width(j = "Study ID", width = 1.5) %>%
-  width(j = "Flower sampling methods", width = 7) %>%
-  
-  # Alignment
-  align(j = "Study ID", align = "center") %>%
-  align(j = "Flower sampling methods", align = "left")
+ft <- flextable::flextable(plant_unit) %>%
+  flextable::theme_booktabs() %>%
+  flextable::fontsize(size = 11, part = "all") %>%
+  flextable::font(fontname = "Arial", part = "all") %>%
+  flextable::width(j = "Study ID", width = 1.5) %>%
+  flextable::width(j = "Flower sampling methods", width = 7) %>%
+  flextable::align(
+    j = "Study ID",
+    align = "center",
+    part = "all"
+  ) %>%
+  flextable::align(
+    j = "Flower sampling methods",
+    align = "left",
+    part = "all"
+  )
 
 doc <- read_docx() %>%
   body_add_par("Table 1. Flower sampling methods per study", style = "heading 2") %>%
@@ -445,3 +537,4 @@ print(doc, target = "./result_260526/plant_sampling_unit.docx")
 
 saveRDS(data_count_scaled,"data/processed/data_count_scaled_published.rds")
 saveRDS(data_interact,"data/processed/data_interact_published.rds")
+

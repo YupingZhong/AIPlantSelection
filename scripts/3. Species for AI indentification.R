@@ -91,8 +91,18 @@ Plant_sp<-unique(metadata$Plant_accepted_name)#1543 POLLINATORS
 ##=============================================
 # Filter pollinator species
 Interaction_data_pol_sp <- metadata %>%
-  filter(!is.na(Pollinator_accepted_name)) %>%
-  filter(Pollinator_rank == "SPECIES") # only species level
+  mutate(
+    Pollinator_accepted_name = stringr::str_squish(
+      Pollinator_accepted_name
+    )
+  ) %>%
+  filter(
+    Pollinator_rank == "SPECIES",
+    !is.na(Pollinator_accepted_name),
+    Pollinator_accepted_name != "",
+    !is.na(Interaction),
+    Interaction > 0
+  ) # only species level
 
 # Filter plant species
 Interaction_data_plant_sp <- metadata %>%
@@ -461,7 +471,7 @@ print(p_capture)
 
 
 ggsave(
-  "/Chap1_TargetPlant_to_monitor/result_260723/Pollinator_importance_curve.png",
+  "/Chap1_TargetPlant_to_monitor/result_revision/Pollinator_importance_curve.png",
   p_capture,
   width = 5,
   height = 4,
@@ -475,30 +485,30 @@ ggsave(
 
 cat("\n\n========== 按目（Order）分组分析 - 方案A ==========\n\n")
 
-pollinator_by_order_A <- Interaction_data_pol_sp %>%
-  # filter(!Study_Network_id %in% crop_dom_site) %>%
+species_order <- Interaction_data_pol_sp %>%
   filter(!is.na(Pollinator_order)) %>%
-  group_by(Study_Network_id) %>%
-  mutate(network_total = sum(Interaction, na.rm = TRUE)) %>%
-  ungroup() %>%
-  group_by(Pollinator_order, Pollinator_accepted_name, Study_Network_id) %>%
-  summarize(
-    species_inter = sum(Interaction, na.rm = TRUE),
-    network_total = first(network_total),
-    .groups = "drop"
+  distinct(Pollinator_accepted_name, Pollinator_order)
+
+stopifnot(!anyDuplicated(species_order$Pollinator_accepted_name))
+
+pollinator_by_order_A <- pollinator_importance_A %>%
+  dplyr::select(
+    Pollinator_accepted_name,
+    Mean_relative_abundance,
+    n_networks_present
   ) %>%
-  mutate(relative_abundance = species_inter / network_total) %>%
-  group_by(Pollinator_order, Pollinator_accepted_name) %>%
-  summarize(
-    Mean_relative_abundance = mean(relative_abundance, na.rm = TRUE),
-    n_networks_present = n_distinct(Study_Network_id),
-    .groups = "drop"
-  ) %>%
+  inner_join(species_order, by = "Pollinator_accepted_name") %>%
   group_by(Pollinator_order) %>%
-  arrange(desc(Mean_relative_abundance), .by_group = TRUE) %>%
+  arrange(
+    desc(Mean_relative_abundance),
+    Pollinator_accepted_name,
+    .by_group = TRUE
+  ) %>%
   mutate(
     Rank = row_number(),
-    Cumulative_pct = (cumsum(Mean_relative_abundance) / sum(Mean_relative_abundance)) * 100
+    Cumulative_pct =
+      100 * cumsum(Mean_relative_abundance) /
+      sum(Mean_relative_abundance)
   ) %>%
   ungroup()
 
@@ -659,7 +669,7 @@ supp_fig_A <- plot_grid(
 print(supp_fig_A)
 
 ggsave(
-  "/Chap1_TargetPlant_to_monitor/result_260723/pollinator_accumulation_by_order_A.png",
+  "/Chap1_TargetPlant_to_monitor/result_revision/pollinator_accumulation_by_order_A.png",
   supp_fig_A,
   width = 11,
   height = 7,
@@ -784,7 +794,7 @@ doc <- read_docx() %>%
 
 print(
   doc,
-  target = "/Chap1_TargetPlant_to_monitor/result_260723/top_pollinator_species_table.docx"
+  target = "/Chap1_TargetPlant_to_monitor/result_revision/top_pollinator_species_table.docx"
 )
 
 
@@ -834,7 +844,7 @@ doc_ft_summary <- read_docx() %>%
 
 print(
   doc_ft_summary,
-  target = "/Chap1_TargetPlant_to_monitor/result_260723/top_pollinator_species_table.docx"
+  target = "/Chap1_TargetPlant_to_monitor/result_revision/top_pollinator_species_summary.docx"
 )
 
 

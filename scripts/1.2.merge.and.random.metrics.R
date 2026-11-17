@@ -120,6 +120,38 @@ get_random_interactions <- function(n_sp) {
     )
 }
 
+###################################
+# Calculate H2 specialization
+#######################################
+calc_H2 <- function(df) {
+  
+  dt <- data.table::as.data.table(df)
+  
+  mat_df <- data.table::dcast(
+    dt,
+    Plant_accepted_name ~ Pollinator_accepted_name,
+    value.var = "Interaction_addup",
+    fill = 0
+  )
+  
+  mat <- as.matrix(mat_df[, -1, with = FALSE])
+  mat[is.na(mat)] <- 0
+  
+  # Remove empty rows and columns
+  mat <- mat[rowSums(mat) > 0, , drop = FALSE]
+  mat <- mat[, colSums(mat) > 0, drop = FALSE]
+  
+  if (nrow(mat) < 2 || ncol(mat) < 2) {
+    return(NA_real_)
+  }
+  
+  tryCatch(
+    as.numeric(
+      bipartite::networklevel(mat, index = "H2")
+    ),
+    error = function(e) NA_real_
+  )
+}
 # ==========================================================
 # Function 2: calculate NODF
 # ==========================================================

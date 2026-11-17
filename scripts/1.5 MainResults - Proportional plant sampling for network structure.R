@@ -35,7 +35,7 @@ library(bipartite)
 set.seed(2025)
 
 data_dir <- "data/processed"
-result_dir <- "D:/Chap1_TargetPlant_to_monitor/result_260723"
+result_dir <- "D:/Chap1_TargetPlant_to_monitor/result_revision"
 
 dir.create(
   result_dir,
@@ -78,13 +78,13 @@ all_H2_df <- readRDS(
 )
 
 full_metrics <- all_nestedness_df %>%
-  select(
+  dplyr::select(
     Study_Network_id,
     NODF_full = Nestedness_orig
   ) %>%
   left_join(
     all_connectance_df %>%
-      select(
+      dplyr::select(
         Study_Network_id,
         Connectance_full = Connectance_orig
       ),
@@ -92,7 +92,7 @@ full_metrics <- all_nestedness_df %>%
   ) %>%
   left_join(
     all_H2_df %>%
-      select(
+      dplyr::select(
         Study_Network_id,
         H2_full = H2_orig
       ),
@@ -336,7 +336,7 @@ select_abundant_plants <- function(proportion) {
         )
     }) %>%
     ungroup() %>%
-    select(
+    dplyr::select(
       Study_Network_id,
       Plant_species,
       total_plant_richness,
@@ -368,7 +368,7 @@ select_random_plants <- function(proportion) {
         )
     }) %>%
     ungroup() %>%
-    select(
+    dplyr::select(
       Study_Network_id,
       Plant_species,
       total_plant_richness,
@@ -473,35 +473,39 @@ abundance_results <- map_dfr(
 # ==============================================================================
 # 7. Random proportional sampling
 # ==============================================================================
+# Generate random-selection results before summarising them
+set.seed(2025)
 
-random_by_repetition <- map_dfr(
+random_by_repetition <- purrr::map_dfr(
   seq_len(n_random_repetitions),
-  function(repetition) {
-
-    map_dfr(
+  function(rep_id) {
+    
+    message(
+      "Random repetition: ",
+      rep_id, "/", n_random_repetitions
+    )
+    
+    purrr::map_dfr(
       sampling_proportions,
       function(proportion) {
-
+        
         selected <- select_random_plants(proportion)
         metrics <- build_subnetwork_metrics(selected)
-
+        
         summarise_correlations(metrics) %>%
-          mutate(
-            repetition = repetition,
+          dplyr::mutate(
+            repetition = rep_id,
             strategy = "Random",
             proportion = proportion,
             percentage = proportion * 100,
             median_n_selected = median(
-              metrics$n_selected,
-              na.rm = TRUE
+              metrics$n_selected, na.rm = TRUE
             ),
             min_n_selected = min(
-              metrics$n_selected,
-              na.rm = TRUE
+              metrics$n_selected, na.rm = TRUE
             ),
             max_n_selected = max(
-              metrics$n_selected,
-              na.rm = TRUE
+              metrics$n_selected, na.rm = TRUE
             )
           )
       }
@@ -509,6 +513,14 @@ random_by_repetition <- map_dfr(
   }
 )
 
+# Save immediately so completed random calculations are retained
+saveRDS(
+  random_by_repetition,
+  file.path(
+    result_dir,
+    "network_structure_random_repetitions_current.rds"
+  )
+)
 random_results <- random_by_repetition %>%
   group_by(
     strategy,
@@ -517,26 +529,43 @@ random_results <- random_by_repetition %>%
     metric
   ) %>%
   summarise(
-    rho = mean(rho, na.rm = TRUE),
+    rho_mean = mean(rho, na.rm = TRUE),
     rho_sd = sd(rho, na.rm = TRUE),
     p_value = NA_real_,
     n_networks = round(mean(n_networks, na.rm = TRUE)),
-    median_n_selected = median(median_n_selected, na.rm = TRUE),
+    median_n_selected = median(
+      median_n_selected, na.rm = TRUE
+    ),
     min_n_selected = min(min_n_selected, na.rm = TRUE),
     max_n_selected = max(max_n_selected, na.rm = TRUE),
     .groups = "drop"
-  )
+  ) %>%
+  rename(rho = rho_mean)
 
 abundance_results <- abundance_results %>%
   mutate(rho_sd = NA_real_)
 
+# 重新建立绘图对象
 all_results <- bind_rows(
   abundance_results,
   random_results
 ) %>%
   arrange(metric, strategy, proportion)
 
+# 检查绘图需要的列
+stopifnot(
+  all(
+    c("percentage", "rho", "strategy", "metric") %in%
+      names(all_results)
+  ),
+  all(
+    c("rho", "rho_sd") %in% names(random_results)
+  )
+)
 
+print(names(all_results))
+print(head(all_results))
+print(summary(random_results$rho_sd))
 # ==============================================================================
 # 8. First observed proportion reaching rho >= 0.8
 # ==============================================================================
@@ -550,7 +579,7 @@ threshold_results <- all_results %>%
   ) %>%
   slice_head(n = 1) %>%
   ungroup() %>%
-  select(
+  dplyr::select(
     strategy,
     metric,
     proportion,
@@ -596,6 +625,17 @@ proportional_plot <- ggplot(
     linetype = "dotted",
     colour = "grey35"
   ) +
+  geom_vline(
+    data = threshold_results %>%
+      dplyr::filter(is.finite(percentage)),
+    aes(
+      xintercept = percentage,
+      colour = strategy
+    ),
+    linetype = "dashed",
+    linewidth = 0.6,
+    show.legend = FALSE
+  ) +
   geom_ribbon(
     data = random_results,
     aes(
@@ -620,9 +660,8 @@ proportional_plot <- ggplot(
     )
   ) +
   scale_fill_manual(
-    values = c(
-      "Random" = "grey65"
-    )
+    values = c("Random" = "grey65"),
+    guide = "none"
   ) +
   scale_x_continuous(
     breaks = seq(20, 100, by = 10),
@@ -708,3 +747,4 @@ ggsave(
 cat("\nAnalysis complete.\n")
 cat("Threshold table:\n")
 print(threshold_results)
+

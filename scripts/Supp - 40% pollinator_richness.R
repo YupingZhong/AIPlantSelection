@@ -24,7 +24,7 @@ suppressPackageStartupMessages({
 # User settings: edit these three lines when needed
 # =============================================================================
 project_dir <- "D:/Chap1_TargetPlant_to_monitor/Project_PlantSelection"
-output_dir <- "D:/Chap1_TargetPlant_to_monitor/result_260723"
+output_dir <- "D:/Chap1_TargetPlant_to_monitor/result_revision"
 n_random_repetitions <- 50L
 
 count_file <- file.path(project_dir, "data", "processed", "data_count_scaled_published.rds")

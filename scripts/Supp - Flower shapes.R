@@ -200,7 +200,7 @@ doc_table_s5 <- read_docx() %>%
 # Save Word document
 print(
   doc_table_s5,
-  target = "data/processed/Table_S5_Flower_Shape_Categories.docx"
+  target = "D:/Chap1_TargetPlant_to_monitor/result_revision/Table_S5_Flower_Shape_Categories.docx"
 )
 
 cat("\n✓ Table S5 created and saved!\n")

@@ -16,7 +16,7 @@ library(cowplot)
 
 # Paths and data
 data_dir <- "data/processed"
-result_dir <- "/Chap1_TargetPlant_to_monitor/result_260723"
+result_dir <- "/Chap1_TargetPlant_to_monitor/result_revision"
 dir.create(result_dir, recursive = TRUE, showWarnings = FALSE)
 
 data_combined_all <- readRDS(file.path(data_dir, "H2_data_combined_all.rds"))

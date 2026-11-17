@@ -35,7 +35,8 @@ suppressPackageStartupMessages({
 project_dir <- "D:/Chap1_TargetPlant_to_monitor/Project_PlantSelection"
 interaction_file <- file.path(project_dir, "data/processed/data_interact_published.rds")
 top10_file <- file.path(project_dir, "data/processed/selected_plant_result_abun10.rds")
-output_dir <- "/Chap1_TargetPlant_to_monitor/result_260723"
+output_dir <- "D:/Chap1_TargetPlant_to_monitor/result_revision"
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
 target_orders <- c(
   "Diptera",
@@ -80,19 +81,24 @@ if (!file.exists(top10_file)) {
   stop("Top-10 result file not found: ", top10_file)
 }
 
-data_interact <- readRDS(interaction_file)
-result10 <- readRDS(top10_file)
+data_interact_all <- readRDS(interaction_file)
+result10_all <- readRDS(top10_file)
+
+data_interact <- data_interact_all
+result10 <- result10_all
 
 required_total_columns <- c(
   "Study_Network_id",
   "Pollinator_order",
   "Pollinator_family",
-  "Pollinator_accepted_name"
+  "Pollinator_accepted_name",
+  "Pollinator_rank"
 )
 
 required_top10_columns <- c(
   "Study_Network_id",
-  "Pollinator_accepted_name"
+  "Pollinator_accepted_name",
+  "Pollinator_rank"
 )
 
 missing_total_columns <- setdiff(required_total_columns, names(data_interact))
@@ -112,6 +118,27 @@ if (length(missing_top10_columns) > 0L) {
   )
 }
 
+
+# Restrict the miss-rate analysis to species-level records.
+data_interact <- data_interact %>%
+  filter(
+    !is.na(Interaction_addup),
+    Interaction_addup > 0,
+    Pollinator_rank == "SPECIES",
+    !is.na(Pollinator_accepted_name),
+    str_squish(Pollinator_accepted_name) != ""
+  )
+
+result10 <- result10 %>%
+  filter(
+    !is.na(Interaction_addup),
+    Interaction_addup > 0,
+    Pollinator_rank == "SPECIES",
+    !is.na(Pollinator_accepted_name),
+    str_squish(Pollinator_accepted_name) != ""
+  )
+
+
 # Clean only whitespace. Do not silently alter capitalization or taxonomy.
 data_interact_clean <- data_interact %>%
   mutate(
@@ -130,6 +157,69 @@ result10_clean <- result10 %>%
       as.character(Pollinator_accepted_name)
     )
   )
+
+# Harmonize only this family-level grouping; retain the original assignment.
+# Reference: NHM Species Dictionary, Melyridae including Dasytinae/Malachiinae.
+# https://www.nhm.ac.uk/our-science/data/uk-species/hierarchy?orgKey=NBNORG0000088711
+data_interact_clean <- data_interact_clean %>%
+  mutate(
+    Pollinator_family_original = Pollinator_family,
+    Pollinator_family = case_when(
+      Pollinator_order == "Coleoptera" &
+        Pollinator_family %in% c("Melyridae", "Dasytidae", "Malachiidae") ~ "Melyridae",
+      TRUE ~ Pollinator_family
+    )
+  )
+write.csv(
+  data_interact_clean %>%
+    filter(Pollinator_family_original != Pollinator_family) %>%
+    distinct(Pollinator_accepted_name, Pollinator_family_original, Pollinator_family),
+  file.path(output_dir, "family_assignment_changes.csv"), row.names = FALSE
+)
+
+
+# Figure S6 remains based on the original name filter; its rules are NOT changed.
+if (!all(c("Interaction_addup", "Pollinator_genus") %in% names(data_interact_clean))) {
+  stop("Interaction_addup and Pollinator_genus are required for Apidae statistics.")
+}
+if (any(data_interact_clean$Interaction_addup < 0, na.rm = TRUE)) {
+  stop("Negative interaction counts detected.")
+}
+apidae_contribution <- function(df, scope) {
+  denominator <- sum(df$Interaction_addup, na.rm = TRUE)
+  apidae <- df %>% filter(Pollinator_family == "Apidae")
+  total_apidae <- sum(apidae$Interaction_addup, na.rm = TRUE)
+  if (denominator <= 0 || total_apidae <= 0) stop("Nonpositive interaction denominator.")
+  apidae %>%
+    mutate(Genus_group = case_when(
+      str_squish(as.character(Pollinator_genus)) == "Apis" ~ "Apis",
+      str_squish(as.character(Pollinator_genus)) == "Bombus" ~ "Bombus",
+      TRUE ~ "Other Apidae (including unresolved genus)"
+    )) %>%
+    group_by(Genus_group) %>%
+    summarise(Interactions = sum(Interaction_addup, na.rm = TRUE), .groups = "drop") %>%
+    mutate(Scope = scope, Total_interactions = denominator,
+           Apidae_interactions = total_apidae,
+           Percent_all_interactions = 100 * Interactions / denominator,
+           Percent_within_Apidae = 100 * Interactions / total_apidae,
+           Apidae_percent_all = 100 * total_apidae / denominator)
+}
+name_eligible <- data_interact_clean %>%
+  filter(!is.na(Study_Network_id), Study_Network_id != "",
+         !is.na(Pollinator_order), Pollinator_order != "",
+         !is.na(Pollinator_family), Pollinator_family != "",
+         !is.na(Pollinator_accepted_name), Pollinator_accepted_name != "")
+if (require_binomial_species_names) {
+  name_eligible <- name_eligible %>%
+    filter(str_count(Pollinator_accepted_name, "\\S+") >= 2L)
+}
+apidae_table <- apidae_contribution(
+  name_eligible,
+  "Species_rank_and_name_filtered_records"
+)
+write.csv(apidae_table, file.path(output_dir, "Apidae_Apis_Bombus_contributions.csv"),
+          row.names = FALSE)
+print(apidae_table, width = Inf)
 
 # Check whether one accepted name has conflicting order/family assignments.
 taxonomy_conflicts <- data_interact_clean %>%
@@ -442,7 +532,7 @@ for (i in seq_along(layout_orders)) {
     Pollinator_family = factor(Pollinator_family, levels = rev(Pollinator_family))
   )
   long_df <- df %>%
-    select(Pollinator_family, Captured, Missed) %>%
+    dplyr::select(Pollinator_family, Captured, Missed) %>%
     pivot_longer(c(Captured, Missed), names_to = "Status", values_to = "Count") %>%
     mutate(Status = factor(Status, levels = c("Captured", "Missed")))
 
@@ -520,14 +610,130 @@ save_figure <- function(plot, stem, extra_mm) {
   ggsave(file.path(output_dir, paste0(stem, "_preview.png")), plot,
          width = figure_width_cm, height = height_cm, units = "cm", dpi = 150, bg = "white")
 }
-save_figure(p_count, "Figure_S6_counts_2x2_v2", 10)
-save_figure(p_rate, "Figure_S6.2_miss_rates_2x2_v2", 10)
+save_figure(p_count, "1109_Figure_S6_counts_2x2_v2", 10)
+save_figure(p_rate, "1109_Figure_S6.2_miss_rates_2x2_v2", 10)
 
 writeLines(c(
-  "Figure S6. Capture and omission of pollinator species-by-network records when monitoring the ten most abundant flowering plant species. Panels show (a) Diptera, (b) Hymenoptera, (c) Lepidoptera and (d) Coleoptera. Each record represents one pollinator species observed in one network. Bars show captured (blue) and missed (orange) records, aggregated by family. Families are ordered by total record count within each order. Count axes differ among panels.",
+  "Figure S6. Capture and omission of pollinator species-by-network records when monitoring the ten most abundant flowering plant species. Panels show (a) Diptera, (b) Hymenoptera, (c) Lepidoptera and (d) Coleoptera. Each record represents one pollinator species observed in one network. Bars show captured (blue) and missed (orange) records, aggregated by family. Dasytidae and Malachiidae are included in Melyridae sensu lato. Families are ordered by total record count within each order. Count axes differ among panels.",
   "",
   "Figure S6.2. Percentage of pollinator species-by-network records missed when monitoring the ten most abundant flowering plant species. Panels and family ordering match Figure S6. For each family, the percentage is calculated as missed records divided by all species-by-network records, multiplied by 100; it is not the percentage of networks in which the entire family is absent. All panels share a 0-100% scale. Point size indicates total species-by-network record count, using a common size scale across all panels; corresponding captured and missed counts are shown in Figure S6."
 ), file.path(output_dir, "Figure_S6_S7_captions.txt"))
 # Preview in RStudio:
 # grid::grid.newpage(); grid::grid.draw(p_count)
 # grid::grid.newpage(); grid::grid.draw(p_rate)
+
+print(apidae_table, width = Inf)
+
+#miss rate table and word
+table_S2 <- species_missed %>%
+  filter(
+    Pollinator_family == "Apidae",
+    Networks_total > 5
+  ) %>%
+  mutate(
+    Genus = sub(" .*", "", Pollinator_accepted_name)
+  ) %>%
+  arrange(
+    Genus,
+    desc(Missed_rate),
+    Pollinator_accepted_name
+  ) %>%
+  transmute(
+    `Pollinator genus` = Genus,
+    `Pollinator species` = Pollinator_accepted_name,
+    `Networks total` = Networks_total,
+    `Networks missed` = Networks_missed,
+    `Miss rate (%)` = round(Missed_rate, 2)
+  )
+
+write.csv(
+  table_S2,
+  file.path(output_dir, "Table_S2_Apidae_miss_rates.csv"),
+  row.names = FALSE)
+  
+#----------word
+library(dplyr)
+library(stringr)
+library(flextable)
+library(officer)
+
+output_dir <- "D:/Chap1_TargetPlant_to_monitor/result_revision"
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+
+# Apidae：仅保留出现于超过5个网络的物种
+table_S2 <- species_missed %>%
+  filter(
+    Pollinator_family == "Apidae",
+    Networks_total > 5
+  ) %>%
+  mutate(
+    Genus = word(Pollinator_accepted_name, 1)
+  ) %>%
+  arrange(
+    Genus,
+    desc(Missed_rate),
+    Pollinator_accepted_name
+  ) %>%
+  transmute(
+    Genus,
+    Species = Pollinator_accepted_name,
+    Networks_total,
+    Networks_missed,
+    Miss_rate = round(Missed_rate, 2)
+  )
+
+ft_S2 <- flextable::flextable(table_S2) %>%
+  flextable::set_header_labels(
+    Genus = "Pollinator\ngenus",
+    Species = "Pollinator\nspecies",
+    Networks_total = "Networks\ntotal",
+    Networks_missed = "Networks\nmissed",
+    Miss_rate = "Miss rate\n(%)"
+  ) %>%
+  flextable::theme_booktabs() %>%
+  flextable::font(fontname = "Arial", part = "all") %>%
+  flextable::fontsize(size = 10, part = "all") %>%
+  flextable::bold(part = "header") %>%
+  flextable::italic(j = "Species", part = "body") %>%
+  flextable::colformat_num(j = "Miss_rate", digits = 2) %>%
+  flextable::merge_v(j = "Genus") %>%
+  flextable::valign(j = "Genus", valign = "top") %>%
+  flextable::align(
+    j = c("Networks_total", "Networks_missed", "Miss_rate"),
+    align = "right",
+    part = "all"
+  ) %>%
+  flextable::autofit() %>%
+  flextable::fit_to_width(max_width = 6.5) %>%
+  flextable::set_table_properties(
+    opts_word = list(
+      split = FALSE,
+      repeat_headers = TRUE
+    )
+  )
+
+caption <- paste0(
+  "Supplementary Table S2. Apid bee species and the number of networks ",
+  "in which each species was missed when monitoring only the ten most ",
+  "abundant plant species in the 267-network dataset. Species occurring ",
+  "in no more than five networks were excluded. Miss rate is the number ",
+  "of networks missed divided by the total number in which the species ",
+  "was recorded, multiplied by 100."
+)
+
+note <- paste0(
+  "Note: Separate entries reflect the taxonomic resolution of the source ",
+  "data and do not imply validated image-based discrimination. The ",
+  "appropriate classification resolution for cryptic or visually similar ",
+  "taxa requires independent validation."
+)
+
+doc_S2 <- read_docx() %>%
+  body_add_par(caption) %>%
+  body_add_flextable(ft_S2) %>%
+  body_add_par(note)
+
+print(
+  doc_S2,
+  target = file.path(output_dir, "Table_S2_Apidae_updated.docx")
+)

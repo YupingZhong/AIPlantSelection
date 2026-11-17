@@ -35,7 +35,7 @@ library(purrr)
 # ==============================================================================
 
 data_dir <- "data/processed"
-result_dir <- "D:/Chap1_TargetPlant_to_monitor/result_260723"
+result_dir <- "D:/Chap1_TargetPlant_to_monitor/result_revision"
 
 if (!dir.exists(result_dir)) dir.create(result_dir, recursive = TRUE)
 
@@ -77,7 +77,7 @@ top_10_species <- data_count_scaled %>%
   slice_max(Flower_count_scaled, n = 10, with_ties = FALSE) %>%
   filter(n_distinct(Plant_species) > 9) %>%
   ungroup() %>%
-  select(Study_Network_id, Plant_species)
+  dplyr::select(Study_Network_id, Plant_species)
 
 
 # ==============================================================================
@@ -140,7 +140,7 @@ data_combined_all <- data_merge %>%
       Plant_accepted_name_map
     )
   ) %>%
-  select(-Plant_accepted_name_map)
+  dplyr::select(-Plant_accepted_name_map)
 
 
 # ==============================================================================
@@ -340,7 +340,7 @@ network_group <- network_highattr %>%
 attract_percent_10 <- percent_10 %>%
   rename(percentage_Abun10 = percentage) %>%
   left_join(
-    network_group %>% select(Study_Network_id, group),
+    network_group %>% dplyr::select(Study_Network_id, group),
     by = "Study_Network_id"
   ) %>%
   rename(present_group = group) %>%
@@ -428,7 +428,7 @@ run_present_absent_test <- function(data, rare_q, attr_q) {
   df_test <- percent_10 %>%
     rename(percentage_Abun10 = percentage) %>%
     left_join(
-      network_group %>% select(Study_Network_id, group),
+      network_group %>% dplyr::select(Study_Network_id, group),
       by = "Study_Network_id"
     ) %>%
     filter(

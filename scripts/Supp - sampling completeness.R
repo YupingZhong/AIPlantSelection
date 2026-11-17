@@ -47,7 +47,7 @@ coverage_results <- do.call(rbind, coverage_results)
 summary(coverage_results$coverage_est)
 
 
-write.csv(coverage_results, "pollinator_sampling_completeness.csv", row.names = FALSE)
+write.csv(coverage_results, "D:/Chap1_TargetPlant_to_monitor/result_revision/pollinator_sampling_completeness.csv", row.names = FALSE)
 
 #################################################################
 
@@ -76,4 +76,4 @@ sampling_c <- ggplot(coverage_results, aes(x = coverage_est)) +
   )
   
 sampling_c
-ggsave("/Chap1_TargetPlant_to_monitor/result_260723/sampling_complete.png", sampling_c, width = 5, height = 3, units = "in", dpi = 300)
+ggsave("/Chap1_TargetPlant_to_monitor/result_revision/sampling_complete.png", sampling_c, width = 5, height = 3, units = "in", dpi = 300)

@@ -63,6 +63,26 @@ data_merge <- merge(data_interact, data_count_scaled[,c("Flower_data_merger","Fl
     Plant_accepted_name = str_squish(str_replace_all(replace_na(Plant_accepted_name, ""), "×", ""))
   ) 
 
+stopifnot(
+  setequal(
+    data_merge$Study_Network_id,
+    data_interact$Study_Network_id
+  )
+)
+
+# 备份旧文件，不覆盖已有备份
+merge_file <- file.path(project_dir, "data", "processed", "data_merge.rds")
+backup_file <- file.path(
+  project_dir, "data", "processed", "data_merge_before_update.rds"
+)
+
+if (file.exists(merge_file) && !file.exists(backup_file)) {
+  stopifnot(file.copy(merge_file, backup_file))
+}
+
+# 保存更新后的合并数据
+saveRDS(data_merge, merge_file)
+
 # Checks
 nrow(data_count_scaled)
 nrow(data_interact)
@@ -155,7 +175,7 @@ result10 <-
   group_by(Study_Network_id) %>%
   ungroup()
 
-#saveRDS(result10,"data/processed/selected_plant_result_abun10.rds")
+saveRDS(result10,"data/processed/selected_plant_result_abun10.rds")
 
 sp_number10 <- result10 %>%
   ungroup%>%
@@ -228,7 +248,7 @@ percent_3 <- merged_data3 %>%
 
 ##################################################################
 
-# saveRDS(percent_10,"percent_10.rds")
+#saveRDS(percent_10,"percent_10.rds")
 
 ################################################################################
 
@@ -278,7 +298,11 @@ pct_10
 abun_species_top5 <- data_count_scaled %>%
   group_by(Study_Network_id, flw_shape_revised) %>%
   arrange(Study_Network_id, flw_shape_revised, desc(Flower_count_scaled)) %>%
-  top_n(1, wt = Flower_count_scaled) %>%
+  slice_max(
+    order_by = Flower_count_scaled,
+    n = 1,
+    with_ties = FALSE
+  ) %>%
   distinct(Study_Network_id, Plant_species, Flower_count_scaled) %>%  # .keep_all = TRUE (keeps all columns)
   group_by(Study_Network_id) %>%
   mutate(rank = rank(desc(Flower_count_scaled),ties.method = "first")) %>% 
@@ -295,7 +319,11 @@ n_distinct(abun_species_top5$Study_Network_id)
 abun_species_top3 <- data_count_scaled %>%
   group_by(Study_Network_id, flw_shape_revised) %>%
   arrange(Study_Network_id, flw_shape_revised, desc(Flower_count_scaled)) %>%
-  top_n(1, wt = Flower_count_scaled) %>%
+  slice_max(
+    order_by = Flower_count_scaled,
+    n = 1,
+    with_ties = FALSE
+  ) %>%
   distinct(Study_Network_id, Plant_species, Flower_count_scaled) %>%  # .keep_all = TRUE 保留所有列
   group_by(Study_Network_id) %>%
   mutate(rank = rank(desc(Flower_count_scaled),ties.method = "first")) %>% #只选择一个而非多个
@@ -346,12 +374,22 @@ op2_sp_number_top5<-abun_species_top5_merge%>%
 
 #计算占比
 #Calculate the percentage
-op2_merged_data_top3 <- merge(op2_sp_number_top3,total_number,by.x = "Study_Network_id", by.y = "Study_Network_id", all.x = TRUE)
+op2_merged_data_top3 <- abun_species_top3 %>%
+  distinct(Study_Network_id) %>%
+  inner_join(total_number, by = "Study_Network_id") %>%
+  filter(total_pollinator_count > 0) %>%
+  left_join(op2_sp_number_top3, by = "Study_Network_id") %>%
+  mutate(pollinator_count = replace_na(pollinator_count, 0))
 op2_percent_shape_top3 <- op2_merged_data_top3 %>%
   mutate(percentage = (pollinator_count / total_pollinator_count) * 100)
 head(op2_percent_shape_top3)
 
-op2_merged_data_top5 <- merge(op2_sp_number_top5,total_number,by.x = "Study_Network_id", by.y = "Study_Network_id", all.x = TRUE)
+op2_merged_data_top5 <- abun_species_top5 %>%
+  distinct(Study_Network_id) %>%
+  inner_join(total_number, by = "Study_Network_id") %>%
+  filter(total_pollinator_count > 0) %>%
+  left_join(op2_sp_number_top5, by = "Study_Network_id") %>%
+  mutate(pollinator_count = replace_na(pollinator_count, 0))
 op2_percent_shape_top5 <- op2_merged_data_top5 %>%
   mutate(percentage = (pollinator_count / total_pollinator_count) * 100)
 head(op2_percent_shape_top5)

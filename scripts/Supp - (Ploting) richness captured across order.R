@@ -559,7 +559,7 @@ stat_pvalue_manual(
 plot_supp_order
 
 ggsave(
-  filename = "/Chap1_TargetPlant_to_monitor/result_260723/Supplementary_Figure_pollinator_order.png",
+  filename = "/Chap1_TargetPlant_to_monitor/result_revision/Supplementary_Figure_pollinator_order.png",
   plot = plot_supp_order,
   width = 10,
   height = 9,
@@ -569,7 +569,7 @@ ggsave(
 )
 
 ggsave(
-  filename = "/Chap1_TargetPlant_to_monitor/result_260723/Supplementary_Figure_pollinator_order.pdf",
+  filename = "/Chap1_TargetPlant_to_monitor/result_revision/Supplementary_Figure_pollinator_order.pdf",
   plot = plot_supp_order,
   width = 10,
   height = 9,
